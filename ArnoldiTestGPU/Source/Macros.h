@@ -19,8 +19,8 @@ const double Im_eig_tol=1.0E-14;
 #endif
 
 
-//#define real_double
-#define real_float 
+#define real_double
+//#define real_float
 
 #ifdef real_double
 	#define real double

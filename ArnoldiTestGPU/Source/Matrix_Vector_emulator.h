@@ -22,8 +22,8 @@ typedef struct user_Ax_struture1{
 
 
 //declare user function that will be passed with structure
-void user_Ax_function(Ax_struct *SC, real * vec_f_in, real * vec_f_out);
-void user_Ax_function_1(Ax_struct_1 *SC, real * vec_f_in, real * vec_f_out);
+void user_Ax_function(Ax_struct *SC, double * vec_f_in, double * vec_f_out);
+void user_Ax_function_1(Ax_struct_1 *SC, double * vec_f_in, double * vec_f_out);
 
 
 #endif

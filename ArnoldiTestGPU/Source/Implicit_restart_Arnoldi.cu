@@ -223,16 +223,28 @@ void Residual_eigenproblem_device(int N, real* Vl_r_d, real* Vr_r_d, real* Vre_d
 }
 
 
+void get_upper_matrix_part_host(int N_source, real *source_matrix, real *dest_matrix, int N_dist){
+
+	for(int i=0;i<N_dist;i++)
+		for(int j=0;j<N_dist;j++){
+			dest_matrix[I2(i,j,N_dist)]=source_matrix[I2(i,j,N_source)];
+		}
+
+
+}
+
+
 
 //which: 
 //		"LR" - largest real, "LM" - largest magnitude
 //
 
 
-real Implicit_restart_Arnoldi_GPU_data(bool verbose, int N, user_map_vector Axb, void *user_struct, real *vec_f_d, char which[2], int k, int m, real complex* eigenvaluesA, real tol, int max_iter, real *eigenvectors_real_d, real *eigenvectors_imag_d){
+real Implicit_restart_Arnoldi_GPU_data(bool verbose, int N, user_map_vector Axb, void *user_struct, real *vec_f_d, char which[2], int k, int m, complex real* eigenvaluesA, real tol, int max_iter, real *eigenvectors_real_d, real *eigenvectors_imag_d, int BLASThreads){
 
 
-
+	//printf("OpenBlas threads used=%i",openblas_get_num_threads());
+	openblas_set_num_threads(BLASThreads);
 	real *vec_c=new real[m];
 	real *vec_h=new real[m];
 	real *vec_q=new real[m];
@@ -269,7 +281,7 @@ real Implicit_restart_Arnoldi_GPU_data(bool verbose, int N, user_map_vector Axb,
 	Arnoldi::device_allocate_all_real(N, 1,1, 6, &Vl_r_d, &Vl_i_d, &Vr_r_d, &Vr_i_d, &Vre_d, &Vim_d);
 
 
-	// Allocate memory for eigenvectors!
+	// Allocate memroy for eigenvectors!
 	cublasComplex *eigenvectorsH_d, *eigenvectorsA_d, *eigenvectorsA_unsorted_d;
 
 
@@ -338,7 +350,56 @@ real Implicit_restart_Arnoldi_GPU_data(bool verbose, int N, user_map_vector Axb,
 
 	if(verbose)
 		printf("\ncomputing eigenvectors...\n");
+
+	//test Schur!
+	real *Q_Schur=new real[k*k];
+	real *H_Schur=new real[k*k];
+	printf("k=%i",k);
+	//get_upper_matrix_part_host(m, H, H_Schur, k);
+	for(int i=0;i<k;i++){
+		for(int j=0;j<k;j++){
+			H_Schur[I2(i,j,k)]=H[I2(i,j,m)];
+		}
+	}
+	Schur_Hessinberg_matrix(H_Schur, k, Q_Schur);
 	//compute eigenvectors
+   	//[Q,R] = schur(H(1:ko,1:ko));
+   	//V = V(:,1:ko)*Q; <--- eigenvectors
+	//R= V'*(A*V);
+	//eigens=eig(R); <--- eigenvalues
+	//residual: resid = norm(A*V - V*R);
+	real *Q_Schur_d;
+	real *Vcolres_d;
+
+	real *V1_temp=new real[N*k];
+
+	Arnoldi::device_allocate_all_real(k, k, 1, 1, &Q_Schur_d);
+	Arnoldi::device_allocate_all_real(N, k, 1, 1, &Vcolres_d);
+
+	Arnoldi::to_device_from_host_real_cpy(Q_Schur_d, Q_Schur, k, k,1);
+	Arnoldi::matrixMultMatrix_GPU(handle, N, k, k, V_d, 1.0, Q_Schur_d, 0.0, V1_d);	//Vectors are in V1_d!!!
+	
+	Arnoldi::to_host_from_device_real_cpy(V1_temp, V1_d, N, k, 1);
+	print_matrix("V1_d.dat", N, k, V1_temp);	
+	
+
+	//form Vcolres_d=A*V1_d
+	for(int i=0;i<k;i++){
+		Axb(user_struct, &V1_d[i*N], &Vcolres_d[i*N]);
+		Arnoldi::check_for_nans("Schur basis projeciton out", N, &Vcolres_d[i*N]);
+	}
+	Arnoldi::matrixTMultMatrix_GPU(handle, k, k, N, V1_d, 1.0, Vcolres_d, 0.0, Q_Schur_d);	//Vectors are in V1_d!!!
+	Arnoldi::to_host_from_device_real_cpy(V1_temp, Vcolres_d, N, k, 1);
+	print_matrix("Vcol_d.dat", N, k, V1_temp);
+	delete [] V1_temp;	
+	
+	Arnoldi::to_host_from_device_real_cpy(H_Schur, Q_Schur_d, k, k, 1);
+	print_matrix("RRR.dat", k, k, H_Schur);
+
+	Arnoldi::device_deallocate_all_real(2, Q_Schur_d,Vcolres_d);
+	delete [] Q_Schur, H_Schur;
+
+	//170820 stopped here!!!
 
 	real complex *HC=new real complex[k*k];
 	for(int i=0;i<k;i++){
@@ -346,9 +407,7 @@ real Implicit_restart_Arnoldi_GPU_data(bool verbose, int N, user_map_vector Axb,
 			HC[I2(i,j,k)]=H[I2(i,j,m)]+0.0*I;
 		}
 	}
-
 	MatrixComplexEigensystem(eigenvectorsH_kk, eigenvaluesH_kk, HC, k);
-	
 	delete [] HC;
 	// 160720
 	// this works in matlab: eigvsA=V*eigvsH, sort as desired (LR or LM).
@@ -464,6 +523,9 @@ real Implicit_restart_Arnoldi_GPU_data(bool verbose, int N, user_map_vector Axb,
 
 	Arnoldi::device_deallocate_all_real(15, V_d, V1_d, Vl_r_d, Vl_i_d, Vr_r_d, Vr_i_d, Vre_d, Vim_d, vec_f1_d, vec_w_d, vec_v_d, vec_c_d, vec_h_d, vec_q_d, Q_d);
 
+	//free cublas
+	cublasDestroy(handle);
+	
 	delete [] vec_c, vec_h, vec_q;
 	delete [] H, R, Q, H1, H2;
 	delete [] eigenvectorsH, eigenvaluesH, eigenvectorsH_kk, eigenvaluesH_kk, ritz_vector;

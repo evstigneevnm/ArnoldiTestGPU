@@ -353,7 +353,7 @@ void QR_square_matrix_no_R(real *A, int N, real *Q){
 
 
 
-void Schur_Hessinberg_matrix(real *H, int Nl, real *Q){
+void Schur_Hessinberg_matrix(real *H, int N, real *Q){
 
 /*
 F08PEF (DHSEQR) computes all the eigenvalues and, optionally, the Schur factorization of a real Hessenberg matrix or a real general matrix which has been reduced to Hessenberg form.
@@ -475,6 +475,10 @@ Results:
 	  -1.0065e-01 
 
 */
+
+/*	
+	//DEBUG!!!!
+
 	real *Ht=new real[4*4];
 	int m=4;
 	Ht[I2(0,0,m)]=0.350000000000000; Ht[I2(0,1,m)]=-0.116000000000000;  Ht[I2(0,2,m)]=-0.388600000000000; Ht[I2(0,3,m)]=-0.294200000000000;
@@ -485,8 +489,10 @@ Results:
 
 	int N=4;//debug!
 	print_matrix("Ht.dat", N, N, Ht);
+	real *Z=new real [N*N];
+*/
 
-
+	print_matrix("Ht.dat", N, N, H);
 	char JOB='S';
 	char COMPZ='I';
 	int ILO=1;
@@ -494,20 +500,21 @@ Results:
 	int LDH=N;
 	real *WR=new real [N];
 	real *WI=new real [N];
-	real *Z=new real [N*N];
 	real *HT=new real [N*N];
 
-	transpose_matrix(N, Ht, HT);
+	//transpose_matrix(N, Ht, HT);
 	int LDZ=N;
 	int INFO=0;
 	int LWORK = 4*N; 
 	real *WORK=new real[LWORK];
 
+	//DEBUG: change /*Ht*/ ... in funcction call
+
 	dhseqr_(&JOB, &COMPZ, &N, &ILO, 
-					&IHI, /*H*/	HT,
+					&IHI, H	/*Ht*/,
 					&LDH, 
 					WR, WI,
-					Z /*Q*/, &LDZ,
+					/*Z*/ Q, &LDZ,
 					WORK,
 					&LWORK, &INFO);
 
@@ -516,16 +523,17 @@ Results:
 		printf("DHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
 		exit(-1);
 	}
-	transpose_matrix(N, HT, Ht);
+/*
+	//DEBUG!!!
+	//transpose_matrix(N, HT, Ht);
 	print_matrix("T.dat", N, N, Ht);
-	transpose_matrix(N, Z, HT);
-	print_matrix("Z.dat", N, N, HT);
-
-
-
-	delete [] WORK, WR, WI ,Z; 
-	delete [] HT;
-
-	delete [] Ht;
+	//transpose_matrix(N, Z, HT);
+	print_matrix("Z.dat", N, N, Z);
+	
+	delete [] Ht, HT ,Z;
+*/
+	
+	delete [] WORK, WR, WI; 
+	
 
 }

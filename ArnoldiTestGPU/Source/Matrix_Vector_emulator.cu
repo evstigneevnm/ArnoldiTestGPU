@@ -12,8 +12,7 @@ __global__ void call_vector_map_kernel(int N, real *vec_source, real *vec_dest){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;	
 
 	if(i<N){
-		vec_dest[0]=0.0;
-		vec_dest[N-1]=0.0;
+		
 		vec_dest[i]=vec_source[I1DP(i+1)]-2.0*vec_source[i]+vec_source[I1DP(i-1)];
 	}
 	
@@ -21,7 +20,7 @@ __global__ void call_vector_map_kernel(int N, real *vec_source, real *vec_dest){
 
 //user definded fucntion example
 
-void user_Ax_function(Ax_struct *SC, real * vec_f_in, real * vec_f_out){
+void user_Ax_function(Ax_struct *SC, double * vec_f_in, double * vec_f_out){
 
 	int N=SC->N;
 	dim3 threads(BLOCKSIZE);
@@ -33,7 +32,7 @@ void user_Ax_function(Ax_struct *SC, real * vec_f_in, real * vec_f_out){
 }
 
 
-void user_Ax_function_1(Ax_struct_1 *SC, real * vec_f_in, real * vec_f_out){
+void user_Ax_function_1(Ax_struct_1 *SC, double * vec_f_in, double * vec_f_out){
 
 	Arnoldi::matrixMultVector_GPU(SC->handle, SC->N, SC->A_d, SC->N, 1.0, vec_f_in, 0.0, vec_f_out);
 

@@ -44,13 +44,13 @@ double rand_normal(double mean, double stddev)
 }
 
 
-void set_matrix(int Row, int Col, real *mat, real val){
+void set_matrix(int Row, int Col, double *mat, double val){
 	for (int i = 0; i<Row; ++i)
 	{
 		for(int j=0;j<Col;j++)
 		{
 
-			mat[I2(i,j,Row)]=(real)rand_normal(0.0, val);
+			mat[I2(i,j,Row)]=rand_normal(0.0, val);
 
 		}
 	}
@@ -65,7 +65,7 @@ int main (int argc, char const* argv[])
 
 	srand ( time(NULL) ); //seed pseudo_random
 		
-	int N=20000;
+	int N=2000;
 	int k=7;
 	int m=k*12;
 	
@@ -75,7 +75,7 @@ int main (int argc, char const* argv[])
 	real *V_d, *V1_d, *A_d, *H_d, *R_d, *Q_d, *H1_d, *H2_d; //matrixes on GPU
 	real *vec_f1_d, *vec_v_d, *vec_w_d, *vec_c_d, *vec_h_d, *vec_f_d, *vec_q_d; //vectors on GPU
 
-	real complex *eigenvaluesA=new real complex[k];
+	double complex *eigenvaluesA=new double complex[k];
 
 //AA	Arnoldi::allocate_real(N,N,1, 1,&A);
 	Arnoldi::allocate_real(N,m,1, 2, &V, &V1);
