@@ -65,9 +65,9 @@ int main (int argc, char const* argv[])
 
 	srand ( time(NULL) ); //seed pseudo_random
 		
-	int N=2000;
-	int k=7;
-	int m=k*12;
+	int N=500;
+	int k=6;
+	int m=k*5;
 	
 	real *V, *V1, *A, *H, *R, *Q, *H1, *H2; //matrixes on CPU
 	real *vec_f1, *vec_v, *vec_w, *vec_c, *vec_h, *vec_f, *vec_q; //vectors on CPU

@@ -18,11 +18,11 @@ real get_errorL(cublasHandle_t handle,int N, real *r, real RHSnorm){
 int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *Iter, bool verbose, unsigned int skip){
 	
 
-	int iter=0; //number of iterations
-	int flag=1; //termiantion flag
-	real error=1.0; //residual
-	real tollerance=tol[0];
-  	int maxIter=Iter[0];
+	int iter = 0; //number of iterations
+	int flag = 1; //termiantion flag
+	real error = 1.0; //residual
+	real tollerance = tol[0];
+  	int maxIter = Iter[0];
 //  unsigned int skip=round(maxIter/50.0);
 //  CUBLAS init
     cublasHandle_t handle; 
@@ -65,23 +65,23 @@ int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, rea
 	get_residualL(handle, N, Axb, user_struct, x, RHS, &r[0]);
 	error = get_errorL(handle, N, &r[0], bnrm);
 	if(error < tollerance){
-		return 0;		
+		flag = 0;		
 	}
-    if(error!=error){
-        printf("\nNans in user defined function!\n");
-        return -3;
+    if(isnan(error)){
+        printf("\nBiCGStab(L): Nans in user defined function!\n");
+        flag = -3;
     }
 	Arnoldi::vector_copy_GPU(handle, N, &r[0], rtilde); //vec_w -> vec_f
 	Arnoldi::normalize_vector_GPU(handle, N, rtilde); 
 	real rho = 1.0, alpha = 0.0, omega = 1.0;	
-	
+	if(flag == 1)
 	for(iter=0; iter<maxIter; iter++){
 		
 		rho = -omega * rho;
 		for (int j = 0; j < L; ++j){			//j=0,...L-1
 			if ( rho == 0.0 ){ 					//check rho break
 	        	flag=-1;
-	        	break; 
+	        	rho=1; 
 	     	}
     		real rho1 = Arnoldi::vector_dot_product_GPU(handle, N, &r[j*N], rtilde); //rho1=(r[j],rtilde)
     		real beta = alpha * rho1 / rho;	
@@ -141,13 +141,15 @@ int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, rea
         	break;
 		}
         if(error!=error){
-            printf("\nNans in user defined function in iterations!\n");
+            printf("\nBiCGStab(L): Nans in user defined function in iterations!\n");
             flag = -3;
             break;
         }
     	if((verbose)&&(iter%skip==0)){
       		printf("%i %le\n", iter, error);
     	}
+    	if(flag<0)	//exit if nans or rho==0;
+    		break;
 
 	}
 
