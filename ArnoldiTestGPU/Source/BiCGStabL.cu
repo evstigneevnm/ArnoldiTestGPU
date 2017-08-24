@@ -1,5 +1,5 @@
-#include "BiCGStabL.h"
-
+//#include "BiCGStabL.h"
+#include "Matrix_Vector_emulator.h"
 
 void get_residualL(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, real *source, real *RHS, real* r){
 	
@@ -15,7 +15,7 @@ real get_errorL(cublasHandle_t handle,int N, real *r, real RHSnorm){
 }
 
 
-int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *Iter, bool verbose, unsigned int skip){
+int BiCGStabL(cublasHandle_t handle, int L, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *Iter, bool verbose, unsigned int skip){
 	
 
 	int iter = 0; //number of iterations
@@ -24,11 +24,12 @@ int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, rea
 	real tollerance = tol[0];
   	int maxIter = Iter[0];
 //  unsigned int skip=round(maxIter/50.0);
+
 //  CUBLAS init
-    cublasHandle_t handle; 
-    cublasStatus_t ret;
-    ret = cublasCreate(&handle);
-    Arnoldi::checkError(ret, " cublasCreate(). ");
+//    cublasHandle_t handle; 
+//    cublasStatus_t ret;
+//    ret = cublasCreate(&handle);
+//    Arnoldi::checkError(ret, " cublasCreate(). ");
 
 //	CPU arrays:
     real *tau, *sigma, *gamma, *gamma_p, *gamma_pp;
@@ -56,11 +57,13 @@ int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, rea
 
   	real bnrm = Arnoldi::vector_norm2_GPU(handle, N, RHS);
 	if(bnrm < 1.0e-15){
-		printf( "||b||_2 <1e-15! assuming ||b||_2=1.0\n");
+		if(verbose)
+            printf( "||b||_2 <1e-15! assuming ||b||_2=1.0\n");
 		bnrm = 1.0;
 	}
     real vn = Arnoldi::vector_norm2_GPU(handle, N, x);
-    printf("\n||b||_2=%le, ||x0||_2=%le\n",bnrm, vn);
+    if(verbose)
+        printf("\n||b||_2=%le, ||x0||_2=%le\n",bnrm, vn);
 
 	get_residualL(handle, N, Axb, user_struct, x, RHS, &r[0]);
 	error = get_errorL(handle, N, &r[0], bnrm);
@@ -93,12 +96,17 @@ int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, rea
     			Arnoldi::vector_copy_GPU(handle, N, v_help, &u[i*N]);
     		}
     		Axb(user_struct,&u[j*N], &u[(j+1)*N]); //u[j+1]=A*u[j]
+           // real vn0 = Arnoldi::vector_norm2_GPU(handle, N, &u[(j+1)*N]);
+           // printf("\n|u[(j+1)*N]|=%le\n",vn0);
     		
     		alpha = rho / Arnoldi::vector_dot_product_GPU(handle, N,  &u[(j+1)*N], rtilde); //alpha=rho/(u[j+1],rtilde)
 			for (int i = 0; i <= j; ++i){
 				Arnoldi::vectors_add_GPU(handle, N, -alpha, &u[(i+1)*N], &r[i*N]); //r[i]=r[i]-alpha.*u[i+1]
 			}
 			Axb(user_struct, &r[j*N], &r[(j+1)*N]); //r[j+1]=A*r[j] Krylov subspace
+           // real vn1 = Arnoldi::vector_norm2_GPU(handle, N, &r[(j+1)*N]);
+           // printf("\n|r[(j+1)*N]|=%le\n",vn1);
+
 			Arnoldi::vectors_add_GPU(handle, N, alpha, &u[0], x); //x=x+alpha.*u[0]
 	   	}
 	   	for (int j = 1; j <= L; ++j){
@@ -168,7 +176,9 @@ int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, rea
   	delete[] gamma;
 
     //delete CUBLAS
-    cublasDestroy(handle);
+  
+  //  cublasDestroy(handle);
+  
   	//return flag
   	return flag;
 }

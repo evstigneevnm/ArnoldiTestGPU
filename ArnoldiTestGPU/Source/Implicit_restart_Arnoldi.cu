@@ -256,18 +256,19 @@ void permute_matrix_colums(int MatrixRaw, int coloms, int *sorted_list, real com
 //
 
 
-real Implicit_restart_Arnoldi_GPU_data(bool verbose, int N, user_map_vector Axb, void *user_struct, real *vec_f_d, char which[2], int k, int m, complex real* eigenvaluesA, real tol, int max_iter, real *eigenvectors_real_d, real *eigenvectors_imag_d, int BLASThreads){
+real Implicit_restart_Arnoldi_GPU_data(cublasHandle_t handle, bool verbose, int N, user_map_vector Axb, void *user_struct, real *vec_f_d, char which[2], int k, int m, complex real* eigenvaluesA, real tol, int max_iter, real *eigenvectors_real_d, real *eigenvectors_imag_d, int BLASThreads){
 	//wrapper without external routine like matrix Exponent
 
+
 	real ritz_norm=1.0;
-	ritz_norm=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(verbose, N,  Axb, user_struct, Axb, user_struct, vec_f_d, which, which, k, m, eigenvaluesA, tol, max_iter, eigenvectors_real_d, eigenvectors_imag_d, BLASThreads);
+	ritz_norm=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, verbose, N,  Axb, user_struct, Axb, user_struct, vec_f_d, which, which, k, m, eigenvaluesA, tol, max_iter, eigenvectors_real_d, eigenvectors_imag_d, BLASThreads);
 
 	return ritz_norm;
 }
 
 
 
-real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(bool verbose, int N,  user_map_vector Axb_exponent_invert, void *user_struct_exponent_invert, user_map_vector Axb, void *user_struct, real *vec_f_d, char which[2], char which_exponent[2], int k, int m, complex real* eigenvaluesA, real tol, int max_iter, real *eigenvectors_real_d, real *eigenvectors_imag_d, int BLASThreads){
+real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bool verbose, int N,  user_map_vector Axb_exponent_invert, void *user_struct_exponent_invert, user_map_vector Axb, void *user_struct, real *vec_f_d, char which[2], char which_exponent[2], int k, int m, complex real* eigenvaluesA, real tol, int max_iter, real *eigenvectors_real_d, real *eigenvectors_imag_d, int BLASThreads){
 
 
 	
@@ -308,7 +309,10 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(bool verbose, int N,  use
 	Arnoldi::device_allocate_all_real(m, 1,1, 3, &vec_c_d, &vec_h_d, &vec_q_d);
 	Arnoldi::device_allocate_all_real(m,m, 1, 1, &Q_d);
 	//Arnoldi::device_allocate_all_real(N, 1,1, 6, &Vl_r_d, &Vl_i_d, &Vr_r_d, &Vr_i_d, &Vre_d, &Vim_d);
-
+	//sets initial guesses for Krylov vectors
+	Arnoldi::set_initial_Krylov_vector_value_GPU(N, vec_f1_d);
+	Arnoldi::set_initial_Krylov_vector_value_GPU(N, vec_v_d);
+	Arnoldi::set_initial_Krylov_vector_value_GPU(N, vec_w_d);
 
 	// Allocate memroy for eigenvectors!
 	cublasComplex *eigenvectorsH_d, *eigenvectorsA_d, *eigenvectorsA_unsorted_d;
@@ -318,10 +322,10 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(bool verbose, int N,  use
 	eigenvectorsA_unsorted_d=Arnoldi::device_allocate_complex(N, k, 1);
 
 
-	cublasHandle_t handle;		//init cublas
-	cublasStatus_t ret;
-	ret = cublasCreate(&handle);
-	Arnoldi::checkError(ret, " cublasCreate(). ");
+//	cublasHandle_t handle;		//init cublas
+//	cublasStatus_t ret;
+//	ret = cublasCreate(&handle);
+//	Arnoldi::checkError(ret, " cublasCreate(). ");
 
 
 	int k0=1;
@@ -388,6 +392,24 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(bool verbose, int N,  use
 			H_Schur[I2(i,j,k)]=H[I2(i,j,m)];
 		}
 	}
+	//check pre-Galerkin eigenvalues of H matrix
+	real complex *HC1=new real complex[k*k];
+	for(int i=0;i<k;i++){
+		for(int j=0;j<k;j++){
+			HC1[I2(i,j,k)]=H_Schur[I2(i,j,k)]+0.0*I;
+			//HC[I2(i,j,k)]=H[I2(i,j,m)]+0.0*I;
+		}
+	}
+	MatrixComplexEigensystem(eigenvectorsH_kk, eigenvaluesH_kk, HC1, k);
+	delete [] HC1;
+	printf("\n Eigenvalues of H matrix before Galerkin projection:\n");
+  	for(int i=0;i<k;i++){ 
+  		real ritz_val=ritz_vector[i];
+  		printf("\n (%.08le, %.08le), ritz: %.04le",  (double) creal(eigenvaluesH_kk[i]), (double) cimag(eigenvaluesH_kk[i]), (double)ritz_val );
+  	}
+
+	//check ends
+
 	Schur_Hessinberg_matrix(H_Schur, k, Q_Schur); //returns Q as orthogonal matrix whose columns are the Schur vectors and the input matrix is overwritten as an upper quasi-triangular matrix (the Schur form of input matrix)
 
 	//compute eigenvectors
@@ -471,14 +493,14 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(bool verbose, int N,  use
 	cudaFree(eigenvectorsA_unsorted_d);
 
 	if(verbose)
-		printf("done\n");
+		printf("\ndone\n");
 
 
 
-	printf("\nNumber of correct eigenvalues=%i Eigenvalues: \n", k0);
+	printf("\nNumber of correct eigenvalues=%i Eigenvalues: \n", k);
   	for(int i=0;i<k;i++){ 
   		real ritz_val=ritz_vector[i];
-  		printf("\n (%.08le, %.08le), ritz: %.04le, residual: %.04le",  (double) creal(eigenvaluesH_kk[i]), (double) cimag(eigenvaluesH_kk[i]), (double)ritz_val, (double)residualAV[i] );
+  		printf("\n (%.08le, %.08le), residual: %.04le",  (double) creal(eigenvaluesH_kk[i]), (double) cimag(eigenvaluesH_kk[i]), (double)residualAV[i] );
   	}
 	printf("\n");
 	delete [] residualAV;
@@ -533,7 +555,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(bool verbose, int N,  use
 	//Arnoldi::device_deallocate_all_real(6, Vl_r_d, Vl_i_d, Vr_r_d, Vr_i_d, Vre_d, Vim_d);
 
 	//free cublas
-	cublasDestroy(handle);
+	//cublasDestroy(handle);
 	
 	delete [] vec_c, vec_h, vec_q;
 	delete [] H, R, Q, H1, H2;
