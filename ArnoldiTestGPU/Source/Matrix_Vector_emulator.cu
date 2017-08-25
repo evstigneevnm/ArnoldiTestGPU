@@ -133,7 +133,7 @@ void Axb_exponent_invert(Ax_struct_exponential *SC_exponential, real * vec_f_in,
 	Iter[0]=SC_exponential->BiCG_Iter;
 	cublasHandle_t handle=SC_exponential->handle;
 
-	int res_flag=BiCGStabL(handle, L, N, (user_map_vector) user_Ax_function_exponential, (Ax_struct_exponential*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, false, 10); //true->false; 10->ommit!
+	int res_flag=BiCGStabL(handle, L, N, (user_map_vector) user_Ax_function_exponential, (Ax_struct_exponential*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, true, 100); //true->false; 10->ommit!
 	switch (res_flag){
 		case 0: //timer_print();
 				//printf("converged with: %le, and %i iterations\n", tol[0], Iter[0]);

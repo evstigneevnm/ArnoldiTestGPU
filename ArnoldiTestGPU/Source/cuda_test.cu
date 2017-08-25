@@ -12,7 +12,7 @@
 #include "Implicit_restart_Arnoldi.h"
 #include "Matrix_Vector_emulator.h"
 
-double rand_normal(double mean, double stddev)
+real rand_normal(real mean, real stddev)
 {//Box muller method
     static double n2 = 0.0;
     static int n2_cached = 0;
@@ -31,20 +31,21 @@ double rand_normal(double mean, double stddev)
             double d = sqrt(-2.0*log(r)/r);
             double n1 = x*d;
             n2 = y*d;
-            double result = n1*stddev + mean;
+            double result = n1*((double)stddev) + (double)mean;
             n2_cached = 1;
-            return result;
+            return (real)result;
         }
     }
     else
     {
         n2_cached = 0;
-        return n2*stddev + mean;
+        double result = n2*((double)stddev) + (double)mean;
+        return (real)result;
     }
 }
 
 
-void set_matrix(int Row, int Col, double *mat, double val){
+void set_matrix(int Row, int Col, real *mat, real val){
 	for (int i = 0; i<Row; ++i)
 	{
 		for(int j=0;j<Col;j++)
@@ -65,9 +66,9 @@ int main (int argc, char const* argv[])
 
 	srand ( time(NULL) ); //seed pseudo_random
 		
-	int N=5000;
+	int N=2300000;
 	int k=6;
-	int m=k*4;
+	int m=k*5;
 	
 	real *V, *V1, *A, *H, *R, *Q, *H1, *H2; //matrixes on CPU
 	real *vec_f1, *vec_v, *vec_w, *vec_c, *vec_h, *vec_f, *vec_q; //vectors on CPU
@@ -75,7 +76,7 @@ int main (int argc, char const* argv[])
 	real *V_d, *V1_d, *A_d, *H_d, *R_d, *Q_d, *H1_d, *H2_d; //matrixes on GPU
 	real *vec_f1_d, *vec_v_d, *vec_w_d, *vec_c_d, *vec_h_d, *vec_f_d, *vec_q_d; //vectors on GPU
 
-	double complex *eigenvaluesA=new double complex[k];
+	real complex *eigenvaluesA=new real complex[k];
 
 //AA	Arnoldi::allocate_real(N,N,1, 1,&A);
 	Arnoldi::allocate_real(N,m,1, 2, &V, &V1);
@@ -143,12 +144,12 @@ int main (int argc, char const* argv[])
 
 	Ax_struct_exponential *SC_exp=new Ax_struct_exponential[1];
 	SC_exp->N=N;
-	SC_exp->tau=1.0/100.0;
-	SC_exp->T=100;
-	SC_exp->shift_real=1.001;
+	SC_exp->tau=1.0/20.0;
+	SC_exp->T=10;
+	SC_exp->shift_real=1.0+1.0e-5;
 
-	SC_exp->BiCG_L=4;
-	SC_exp->BiCG_tol=1.0e-11;
+	SC_exp->BiCG_L=5;
+	SC_exp->BiCG_tol=1.0e-9;
 	SC_exp->BiCG_Iter=N;
 	SC_exp->handle=handle;
 
