@@ -72,6 +72,24 @@ void print_matrix(const char *f_name, int Row, int Col, real complex *matrix){
 }
 
 
+int read_matrix_size(const char *f_name){
+
+	FILE *stream;
+	stream=fopen(f_name, "r" );
+	if (stream == NULL)
+  	{
+  		return -1;
+  	}
+  	double val=0;	
+	int matrix_size=0;
+	while (fscanf(stream, "%le",&val)==1){
+		matrix_size++;
+	}
+	fclose(stream);
+  	return sqrt(matrix_size);
+}
+
+
 int read_matrix(const char *f_name,  int Row, int Col,  real *matrix){
 
 	FILE *stream;

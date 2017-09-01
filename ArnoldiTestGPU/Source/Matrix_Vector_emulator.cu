@@ -36,6 +36,7 @@ void user_Ax_function(Ax_struct *SC, real * vec_f_in, real * vec_f_out){
 }
 
 
+
 __global__  void single_euler_step(int N, real tau, real *vec_in, real *vec_out){
 	//assume that vec_out contains the action of RHS on the vec_in
 
@@ -89,6 +90,34 @@ void single_step(dim3 threads, dim3 blocks, int N, real tau, real * vec_f_in, re
 }
 
 
+void user_Ax_function_2(cublasHandle_t handle, int N, real *A, real * vec_f_in, real * vec_f_out){
+
+	Arnoldi::matrixMultVector_GPU(handle, N, A, N, 1.0, vec_f_in, 0.0, vec_f_out);
+
+}
+
+
+
+void user_Ax_function_1(Ax_struct_1 *SC, real * vec_f_in, real * vec_f_out){
+
+	Arnoldi::matrixMultVector_GPU(SC->handle, SC->N, SC->A_d, SC->N, 1.0, vec_f_in, 0.0, vec_f_out);
+
+}
+
+
+
+
+void single_step(dim3 threads, dim3 blocks, cublasHandle_t handle, real *A, int N, real tau, real * vec_f_in, real * vec_f_out){
+
+	//call_vector_map_kernel<<< blocks, threads>>>(N, vec_f_in, vec_f_out);
+
+	user_Ax_function_2(handle, N, A, vec_f_in, vec_f_out);
+	single_euler_step<<< blocks, threads>>>(N, tau, vec_f_in, vec_f_out);
+
+	//TODO: implement RK3 or RK4 exponent estimate! Euler method is only for a test!
+
+}
+
 
 //user definded fucntion example
 
@@ -100,6 +129,7 @@ void user_Ax_function_exponential(Ax_struct_exponential *SC_exponential, real * 
 	real *vec_step0=SC_exponential->vec_step0;
 	real *vec_step1=SC_exponential->vec_step1;
 	real *vec_step2=SC_exponential->vec_step2;
+	real *A = SC_exponential->A;
 	real shift_real=SC_exponential->shift_real;
 	cublasHandle_t handle=SC_exponential->handle;
 
@@ -111,7 +141,8 @@ void user_Ax_function_exponential(Ax_struct_exponential *SC_exponential, real * 
 
 	copy_vectors<<< blocks, threads>>>(N, vec_f_in, vec_step0); //input vector vec_f_in -> vec_step0
 	for(int t=0;t<T;t++){
-		single_step(threads, blocks, N, tau, vec_step0, vec_f_out);	//signle time step
+		//single_step(threads, blocks, N, tau, vec_step0, vec_f_out);	//signle time step
+		single_step(threads, blocks, handle, A, N, tau, vec_step0, vec_f_out);
 		copy_vectors<<< blocks, threads>>>(N, vec_f_out, vec_step0);			//copy vec_f_out->vec_step0
 	}
 	copy_vectors<<< blocks, threads>>>(N, vec_step0, vec_f_out);
@@ -133,12 +164,12 @@ void Axb_exponent_invert(Ax_struct_exponential *SC_exponential, real * vec_f_in,
 	Iter[0]=SC_exponential->BiCG_Iter;
 	cublasHandle_t handle=SC_exponential->handle;
 
-	int res_flag=BiCGStabL(handle, L, N, (user_map_vector) user_Ax_function_exponential, (Ax_struct_exponential*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, true, 100); //true->false; 10->ommit!
+	int res_flag=BiCGStabL(handle, L, N, (user_map_vector) user_Ax_function_exponential, (Ax_struct_exponential*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, false, 500); //true->false; 10->ommit!
 	switch (res_flag){
 		case 0: //timer_print();
 				//printf("converged with: %le, and %i iterations\n", tol[0], Iter[0]);
 				//printf("%.03le ",tol[0]); 
-				printf("."); 
+				printf("%i|",Iter[0]); 
 				fflush(stdout);
 				break;
 		case 1: //timer_print();
@@ -159,16 +190,6 @@ void Axb_exponent_invert(Ax_struct_exponential *SC_exponential, real * vec_f_in,
 
 
 }
-
-
-
-void user_Ax_function_1(Ax_struct_1 *SC, real * vec_f_in, real * vec_f_out){
-
-	Arnoldi::matrixMultVector_GPU(SC->handle, SC->N, SC->A_d, SC->N, 1.0, vec_f_in, 0.0, vec_f_out);
-
-}
-
-
 
 
 
