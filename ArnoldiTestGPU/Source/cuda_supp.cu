@@ -104,6 +104,7 @@ void check_for_nans(char message[], int Size, real *array){
 
 
 
+
 void checkError(cublasStatus_t status, const char *msg)
 {
     if (status != CUBLAS_STATUS_SUCCESS)
@@ -413,6 +414,19 @@ __global__ void set_vector_value_kernel(int N, real val, real *vec){
 }
 
 
+__global__ void set_initial_Krylov_vector_value_kernel(int N, real *vec){
+	
+	int i = blockIdx.x * blockDim.x + threadIdx.x;	
+
+	if(i<N){
+		vec[i]=0.0;
+	}
+	vec[0]=1.0;
+	vec[N/4]=3.0;
+	vec[N/2]=0.5;
+
+}
+
 
 void set_vector_value_GPU(int N, real val, real *vec){
 
@@ -422,9 +436,46 @@ void set_vector_value_GPU(int N, real val, real *vec){
 	
 	set_vector_value_kernel<<< blocks, threads>>>(N, val,vec);
 
+}
+
+
+
+
+void set_initial_Krylov_vector_value_GPU(int N, real *vec){
+
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	
+	set_initial_Krylov_vector_value_kernel<<< blocks, threads>>>(N, vec);
 
 
 }
+
+
+
+__global__ void set_vector_inverce_kernel(int N, real *vec){
+
+	int i = blockIdx.x * blockDim.x + threadIdx.x;	
+
+	if(i<N){
+		vec[i]=-vec[i];
+	}
+	
+}
+
+
+void set_vector_inverce_GPU(int N, real *vec){
+
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	
+	set_vector_inverce_kernel<<< blocks, threads>>>(N, vec);
+
+}
+
+
 
 
 void matrixMultVector_part_GPU(cublasHandle_t handle, int RowA, real *A, int ColA, real alpha, real *x, int part_Cols, real beta, real *res){ //   res=α*A*x+β*res){
@@ -615,7 +666,8 @@ incy 	input stride between consecutive elements of .y
 
 }
 
-void matrixMultMatrix_GPU(cublasHandle_t handle, int RowAC, int ColBC, int ColA, real *A, real alpha, real *B, real beta, real *C){   // C = α op ( A ) op ( B ) + β C
+void matrixMultMatrix_GPU(cublasHandle_t handle, int RowAC, int ColBC, int ColA, real *A, real alpha, real *B, real beta, real *C){   
+// C = α op ( A ) op ( B ) + β C
 
 
 /*
@@ -689,7 +741,7 @@ ldc 	input	leading dimension of a two-dimensional array used to store the matrix
                            RowAC, ColBC, ColA,
                           &alpha, A, LDA,
                           B, LDB,
-                           &beta,
+                          &beta,
                           C, LDC);
 	#endif
 	#ifdef real_double	
@@ -706,6 +758,97 @@ ldc 	input	leading dimension of a two-dimensional array used to store the matrix
 
 }
 
+void matrixTMultMatrix_GPU(cublasHandle_t handle, int RowAC, int ColBC, int ColA, real *A, real alpha, real *B, real beta, real *C){   
+// C = α op ( A ) op ( B ) + β C
+
+
+/*
+cublasStatus_t cublasSgemm(cublasHandle_t handle,
+                           cublasOperation_t transa, cublasOperation_t transb,
+                           int m, int n, int k,
+                           const float           *alpha,
+                           const float           *A, int lda,
+                           const float           *B, int ldb,
+                           const float           *beta,
+                           float           *C, int ldc)
+cublasStatus_t cublasDgemm(cublasHandle_t handle,
+                           cublasOperation_t transa, cublasOperation_t transb,
+                           int m, int n, int k,
+                           const double          *alpha,
+                           const double          *A, int lda,
+                           const double          *B, int ldb,
+                           const double          *beta,
+                           double          *C, int ldc)
+
+
+This function performs the matrix-matrix multiplication
+
+C = α op ( A ) op ( B ) + β C
+where α and β are scalars, and A , B and C are matrices stored in column-major format with dimensions op ( A ) m × k , op ( B ) k × n and C m × n , respectively. Also, for matrix A
+
+op ( A ) = A if  transa == CUBLAS_OP_N 
+		   A^T if  transa == CUBLAS_OP_T 
+		   A^H if  transa == CUBLAS_OP_C
+
+and op ( B ) is defined similarly for matrix B
+
+handle 	input	handle to the cuBLAS library context.
+
+transa	input	operation op(A) that is non- or (conj.) transpose.
+
+transb 	input 	operation op(B) that is non- or (conj.) transpose.
+
+m 		input	number of rows of matrix op(A) and C.
+
+n 		input	number of columns of matrix op(B) and C.
+
+k 		input	number of columns of op(A) and rows of op(B).
+
+alpha 	host or device input	<type> scalar used for multiplication.
+
+A 	device input	<type> array of dimensions lda x k with lda>=max(1,m) if transa == CUBLAS_OP_N and lda x m with lda>=max(1,k) otherwise.
+
+lda 	input leading dimension of two-dimensional array used to store the matrix A.
+
+B 	device input	<type> array of dimension ldb x n with ldb>=max(1,k) if transa == CUBLAS_OP_N and ldb x k with ldb>=max(1,n) otherwise.
+
+ldb 	input 	leading dimension of two-dimensional array used to store matrix B.
+
+beta	 host or device input	<type> scalar used for multiplication. If beta==0, C does not have to be a valid input.
+
+C 	device in/out 	<type> array of dimensions ldc x n with ldc>=max(1,m).
+
+ldc 	input	leading dimension of a two-dimensional array used to store the matrix C.
+
+
+*/
+	int LDA=ColA;
+	int LDB=ColA;
+	int LDC=RowAC;
+	cublasStatus_t ret;
+
+	#ifdef real_float		
+		ret=cublasSgemm(handle,
+                           CUBLAS_OP_T, CUBLAS_OP_N,
+                           RowAC, ColBC, ColA,
+                          &alpha, A, LDA,
+                          B, LDB,
+                           &beta,
+                          C, LDC);
+	#endif
+	#ifdef real_double	
+		ret=cublasDgemm(handle,
+                           CUBLAS_OP_T, CUBLAS_OP_N,
+                           RowAC, ColBC, ColA,
+                          &alpha, A, LDA,
+                          B, LDB,
+                           &beta,
+                          C, LDC);
+	#endif
+
+	checkError(ret, " matrixTMultMatrix_GPU(). ");
+
+}
 
 
 void matrixMultComplexMatrix_GPU(cublasHandle_t handle, int RowAC, int ColBC, int ColA, cublasComplex *A, cublasComplex *B, cublasComplex *C){   // C = α op ( A ) op ( B ) + β C
