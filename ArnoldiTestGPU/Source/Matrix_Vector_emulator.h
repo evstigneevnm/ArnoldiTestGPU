@@ -23,6 +23,9 @@ typedef struct user_Ax_struture_exponential{
 	int T;
 	real shift_real;
 
+	//matrix
+	real *A;
+
 	//for RK3 integration:
 	real *vec_step0;
 	real *vec_step1;

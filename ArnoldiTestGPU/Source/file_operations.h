@@ -14,7 +14,7 @@ void print_matrix(const char *f_name, int Row, int Col, real *matrix);
 void print_matrix(const char *f_name, int Row, int Col, real complex *matrix);
 int read_matrix(const char *f_name,  int Row, int Col,  real *matrix);
 int read_vector(const char *f_name,  int N,  real *vec);
-
+int read_matrix_size(const char *f_name);
 
 
 #endif
