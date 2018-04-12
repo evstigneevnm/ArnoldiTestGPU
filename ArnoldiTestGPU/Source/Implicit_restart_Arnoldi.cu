@@ -412,7 +412,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 	printf("\n Eigenvalues of H matrix before Galerkin projection:\n");
   	for(int i=0;i<k;i++){ 
   		real ritz_val=ritz_vector[i];
-  		printf("\n (%.08le, %.08le), ritz: %.04le",  (double) creal(eigenvaluesH_kk[i]), (double) cimag(eigenvaluesH_kk[i]), (double)ritz_val );
+  		printf("\n%.08le,%.08le,ritz:,%.04le",  (double) creal(eigenvaluesH_kk[i]), (double) cimag(eigenvaluesH_kk[i]), (double)ritz_val );
   	}
 
 	//check ends
@@ -483,7 +483,8 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 	MatrixComplexEigensystem(eigenvectorsH_kk, eigenvaluesH_kk, HC, k);
 
 	delete [] HC;
-	delete [] Q_Schur, H_Schur;
+	delete [] Q_Schur;
+	delete [] H_Schur;
 
 	int *sorted_list=new int[k];
 	int *sorted_list_d=Arnoldi::device_allocate_int(k, 1, 1);
@@ -515,7 +516,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 	printf("\nNumber of correct eigenvalues=%i Eigenvalues: \n", k);
   	for(int i=0;i<k;i++){ 
   		real ritz_val=ritz_vector[i];
-  		printf("\n (%.08le, %.08le), residual: %.04le",  (double) creal(eigenvaluesH_kk[i]), (double) cimag(eigenvaluesH_kk[i]), (double)residualAV[i] );
+  		printf("\n%.08le,%.08le,residual:,%.04le",  (double) creal(eigenvaluesH_kk[i]), (double) cimag(eigenvaluesH_kk[i]), (double)residualAV[i] );
   	}
 	printf("\n");
 	delete [] residualAV;
@@ -555,8 +556,12 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 		print_vector("EigH.dat", k, eigenvaluesH_kk);
 		print_vector("f.dat", N, vec_f_local);	
 
-		delete [] eigenvectorsA, vec_f_local, V_local, V1_local;
-		delete [] V_real_local,V_imag_local;
+		delete [] eigenvectorsA;
+		delete [] vec_f_local;
+		delete []  V_local; 
+		delete [] V1_local;
+		delete [] V_real_local;
+		delete [] V_imag_local;
 		printf("done\n");
 	}
 	cudaFree(eigenvectorsA_d);
@@ -572,9 +577,10 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 	//free cublas
 	//cublasDestroy(handle);
 	
-	delete [] vec_c, vec_h, vec_q;
-	delete [] H, R, Q, H1, H2;
-	delete [] eigenvectorsH, eigenvaluesH, eigenvectorsH_kk, eigenvectorsH_kk_sorted, eigenvaluesH_kk, ritz_vector;
+	delete [] vec_c; delete [] vec_h; delete []  vec_q;
+	delete [] H; delete []  R; delete []  Q; delete []  H1; delete []  H2;
+	delete [] eigenvectorsH; delete []  eigenvaluesH; delete []  eigenvectorsH_kk; 
+	delete []  eigenvectorsH_kk_sorted; delete []  eigenvaluesH_kk; delete []  ritz_vector;
 
 
 	return ritz_norm;

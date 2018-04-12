@@ -78,6 +78,7 @@ int read_matrix_size(const char *f_name){
 	stream=fopen(f_name, "r" );
 	if (stream == NULL)
   	{
+  		printf("\n Matrix file %s not found! \n", f_name);
   		return -1;
   	}
   	double val=0;	

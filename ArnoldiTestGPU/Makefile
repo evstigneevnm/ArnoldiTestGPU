@@ -53,7 +53,7 @@ BiCGstabL:
 
 Arnoldi_deb:
 	>result_make.txt
-	nvcc -m64 -g Source/cuda_test.cu -o Arnoldi_test Obj/Arnoldi_LAPACK_routines.o Obj/Arnoldi_Products.o Obj/Arnoldi_Select_Shifts.o Obj/Arnoldi_QR_Shifts.o Obj/Arnoldi_timer.o Obj/Arnoldi_Matrix_Vector_emulator.o Obj/Arnoldi_Arnoldi_Driver.o Obj/Arnoldi_file_operations.o Obj/Arnoldi_memory_operations.o Obj/Arnoldi_cuda_supp.o Obj/Arnoldi_Implicit_restart_Arnoldi.o Obj/BiCGStabL.o -L/opt/OpenBLAS/lib -lblas -lm -lgfortran -lopenblas -llapack -lcublas  2>>result_make.txt
+	nvcc -m64 -g Source/cuda_test.cu -o Arnoldi_test Obj/Arnoldi_LAPACK_routines.o Obj/Arnoldi_Products.o Obj/Arnoldi_Select_Shifts.o Obj/Arnoldi_QR_Shifts.o Obj/Arnoldi_timer.o Obj/Arnoldi_Matrix_Vector_emulator.o Obj/Arnoldi_Arnoldi_Driver.o Obj/Arnoldi_file_operations.o Obj/Arnoldi_memory_operations.o Obj/Arnoldi_cuda_supp.o Obj/Arnoldi_Implicit_restart_Arnoldi.o Obj/BiCGStabL.o -L/opt/OpenBLAS/lib -llapack -lblas -lopenblas -lgfortran -lm -lcublas  2>>result_make.txt
 
 
 Arnoldi_all:

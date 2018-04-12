@@ -79,7 +79,8 @@ int main (int argc, char const* argv[])
 	real complex *eigenvaluesA=new real complex[k];
 
 //	N = read_matrix_size("Jacobian_Im_20_1_1_4p0_32_8_8.dat");
-	N = read_matrix_size("Jacobian_1.dat");
+    char *matrix_file_name="Jacobian_1_2D.dat";
+	N = read_matrix_size(matrix_file_name);
 	Arnoldi::allocate_real(N,N,1, 1,&A);
 	Arnoldi::allocate_real(N,m,1, 2, &V, &V1);
 	Arnoldi::allocate_real(N,1,1, 4, &vec_f1, &vec_f, &vec_w, &vec_v);
@@ -87,7 +88,7 @@ int main (int argc, char const* argv[])
 	Arnoldi::allocate_real(m,m,1, 5, &H, &H1, &H2, &R, &Q);
 	//set initial matrixes and vectors
 //	read_matrix("Jacobian_Im_20_1_1_4p0_32_8_8.dat", N, N, A);
-	read_matrix("Jacobian_1.dat", N, N, A);
+	read_matrix(matrix_file_name, N, N, A);
 
 
 	
@@ -120,10 +121,9 @@ int main (int argc, char const* argv[])
 	}
 	printf("\nCPU Preperations done.\n");
 	//preparations	
-	if(!Arnoldi::InitCUDA(0)) {
+	if(!Arnoldi::InitCUDA(-1)) {
 		return 0;
-	}
-	cudaDeviceReset();		
+	}		
 //	cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
 	
 	Arnoldi::device_allocate_all_real(N,N, 1, 1,&A_d);
@@ -153,9 +153,9 @@ int main (int argc, char const* argv[])
 
 	Ax_struct_exponential *SC_exp=new Ax_struct_exponential[1];
 	SC_exp->N=N;
-	SC_exp->tau=1.0e-4;
-	SC_exp->T=100;
-	SC_exp->shift_real=1.00001;
+	SC_exp->tau=1.0e-2;
+	SC_exp->T=10;
+	SC_exp->shift_real=1.01;
 
 	SC_exp->BiCG_L=4;
 	SC_exp->BiCG_tol=1.0e-9;
