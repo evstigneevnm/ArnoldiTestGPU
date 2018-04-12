@@ -23,11 +23,11 @@ Arnoldi_timer:
 
 Arnoldi_Matrix_Vector_emulator:
 	2>result_make.txt
-	nvcc -arch=sm_21 -m64 -g Source/Matrix_Vector_emulator.cu -o Obj/Arnoldi_Matrix_Vector_emulator.o -c 2>>result_make.txt
+	nvcc -m64 -g Source/Matrix_Vector_emulator.cu -o Obj/Arnoldi_Matrix_Vector_emulator.o -c 2>>result_make.txt
 
 Arnoldi_Arnoldi_Driver:
 	2>result_make.txt
-	nvcc -arch=sm_21 -m64 -g Source/Arnoldi_Driver.cu -o Obj/Arnoldi_Arnoldi_Driver.o -c 2>>result_make.txt
+	nvcc -m64 -g Source/Arnoldi_Driver.cu -o Obj/Arnoldi_Arnoldi_Driver.o -c 2>>result_make.txt
 
 Arnoldi_file_operations:
 	2>result_make.txt
@@ -36,24 +36,24 @@ Arnoldi_file_operations:
 
 Arnoldi_memory_operations:
 	2>result_make.txt
-	nvcc -arch=sm_21 -m64 -g Source/memory_operations.cu -o Obj/Arnoldi_memory_operations.o -c 2>>result_make.txt
+	nvcc -m64 -g Source/memory_operations.cu -o Obj/Arnoldi_memory_operations.o -c 2>>result_make.txt
 
 Arnoldi_cuda_supp:
 	2>result_make.txt
-	nvcc -arch=sm_21 -m64 -g Source/cuda_supp.cu -o Obj/Arnoldi_cuda_supp.o -c 2>>result_make.txt
+	nvcc -m64 -g Source/cuda_supp.cu -o Obj/Arnoldi_cuda_supp.o -c 2>>result_make.txt
 
 Arnoldi_Implicit_restart_Arnoldi:
 	2>result_make.txt
-	nvcc -arch=sm_21 -m64 -g Source/Implicit_restart_Arnoldi.cu -o Obj/Arnoldi_Implicit_restart_Arnoldi.o  -c 2>>result_make.txt
+	nvcc  -m64 -g Source/Implicit_restart_Arnoldi.cu -o Obj/Arnoldi_Implicit_restart_Arnoldi.o  -c 2>>result_make.txt
 
 BiCGstabL:
 	2>result_make.txt
-	nvcc -arch=sm_21 -m64 -g Source/BiCGStabL.cu -o Obj/BiCGStabL.o -c 2>>result_make.txt
+	nvcc -m64 -g Source/BiCGStabL.cu -o Obj/BiCGStabL.o -c 2>>result_make.txt
 
 
 Arnoldi_deb:
 	>result_make.txt
-	nvcc -arch=sm_21 -m64 -g Source/cuda_test.cu -o Arnoldi_test Obj/Arnoldi_LAPACK_routines.o Obj/Arnoldi_Products.o Obj/Arnoldi_Select_Shifts.o Obj/Arnoldi_QR_Shifts.o Obj/Arnoldi_timer.o Obj/Arnoldi_Matrix_Vector_emulator.o Obj/Arnoldi_Arnoldi_Driver.o Obj/Arnoldi_file_operations.o Obj/Arnoldi_memory_operations.o Obj/Arnoldi_cuda_supp.o Obj/Arnoldi_Implicit_restart_Arnoldi.o Obj/BiCGStabL.o -L/opt/OpenBLAS/lib -lblas -lm -lgfortran -lopenblas -llapack -lcublas  2>>result_make.txt
+	nvcc -m64 -g Source/cuda_test.cu -o Arnoldi_test Obj/Arnoldi_LAPACK_routines.o Obj/Arnoldi_Products.o Obj/Arnoldi_Select_Shifts.o Obj/Arnoldi_QR_Shifts.o Obj/Arnoldi_timer.o Obj/Arnoldi_Matrix_Vector_emulator.o Obj/Arnoldi_Arnoldi_Driver.o Obj/Arnoldi_file_operations.o Obj/Arnoldi_memory_operations.o Obj/Arnoldi_cuda_supp.o Obj/Arnoldi_Implicit_restart_Arnoldi.o Obj/BiCGStabL.o -L/opt/OpenBLAS/lib -lblas -lm -lgfortran -lopenblas -llapack -lcublas  2>>result_make.txt
 
 
 Arnoldi_all:
