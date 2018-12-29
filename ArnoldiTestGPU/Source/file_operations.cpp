@@ -39,8 +39,11 @@ void print_matrix(const char *f_name, int Row, int Col, real *matrix){
 	{
 		for(int j=0;j<Col;j++)
 		{
-	 	
-		 	fprintf(stream, "%.16le ",(double) matrix[I2(i,j,Row)]);
+	 		if(j<Col-1)
+		 		fprintf(stream, "%.16le ",(double) matrix[I2(i,j,Row)]);
+		 	else
+		 		fprintf(stream, "%.16le",(double) matrix[I2(i,j,Row)]);
+
 	 	}
 		fprintf(stream, "\n");
 	} 

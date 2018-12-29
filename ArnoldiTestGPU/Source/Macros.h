@@ -10,7 +10,7 @@
 const double Im_eig_tol=1.0E-14;
 
 #ifndef I2
-	#define I2(i,j,Rows) (i)+(j)*(Rows)
+	#define I2(i, j, Rows) (i)+(j)*(Rows)
 #endif
 
 

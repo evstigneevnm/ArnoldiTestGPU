@@ -186,7 +186,8 @@ void Axb_exponent_invert(Ax_struct_exponential *SC_exponential, real * vec_f_in,
 				exit(-1);
 				break;
 	}
-	delete [] tol, Iter;
+	delete [] tol;
+	delete [] Iter;
 
 
 }
@@ -213,4 +214,5 @@ void call_vector_map_GPU(int N,  real *vec_f_d, real *res_d){
 	
 	call_vector_map_kernel<<< blocks, threads>>>(N, vec_f_d, res_d);
 }
+
 

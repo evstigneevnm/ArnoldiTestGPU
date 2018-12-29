@@ -14,7 +14,7 @@
 
 namespace Arnoldi
 {
-
+real get_machine_epsilon();
 void check_for_nans(char message[], int Size, real *array);
 
 bool InitCUDA(int GPU_number);

@@ -11,10 +11,11 @@
 namespace Arnoldi
 {
 
-real* allocate_d(int Nx, int Ny, int Nz);
-int* allocate_i(int Nx, int Ny, int Nz);
+real* allocate_d(int N);
+int* allocate_i(int N);
 void allocate_real(int Nx, int Ny, int Nz, int count, ...);
 void allocate_int(int Nx, int Ny, int Nz, int count, ...);
+void allocate_real(int N, int count, ...);
 void deallocate_real(int count, ...);
 void deallocate_int(int count, ...);
 int* device_allocate_int(int Nx, int Ny, int Nz);

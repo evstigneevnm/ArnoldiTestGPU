@@ -32,31 +32,31 @@ real complex *RWORK = (real complex*)malloc( 2*N*sizeof(real complex));
 int INFO;
 
 #ifdef real_double
-	zgeev_( &JOBVL, &JOBVR, &N, AT ,  &N , eigenvaluesW ,
-	   	VL, &LDVL,
-	   	eigenvectorsVR, &LDVR, 
-	   	WORK, 
-	   	&LWORK, RWORK, &INFO );
+    zgeev_( &JOBVL, &JOBVR, &N, AT ,  &N , eigenvaluesW ,
+        VL, &LDVL,
+        eigenvectorsVR, &LDVR, 
+        WORK, 
+        &LWORK, RWORK, &INFO );
 #endif
-#ifdef real_float	
-	cgeev_( &JOBVL, &JOBVR, &N, AT ,  &N , eigenvaluesW ,
-		VL, &LDVL,
-	   	eigenvectorsVR, &LDVR, 
-	   	WORK, 
-	   	&LWORK, RWORK, &INFO );
-#endif	
+#ifdef real_float   
+    cgeev_( &JOBVL, &JOBVR, &N, AT ,  &N , eigenvaluesW ,
+        VL, &LDVL,
+        eigenvectorsVR, &LDVR, 
+        WORK, 
+        &LWORK, RWORK, &INFO );
+#endif  
 
 
 //transpose_matrix(N, eigenvectorsVR, AT);
 
 
 //for(i=0;i<N*N;i++) 
-//	eigenvectorsVR[i]=AT[i];
+//  eigenvectorsVR[i]=AT[i];
 
  
-	free(WORK);
-	free(RWORK);
-	free(AT);
+    free(WORK);
+    free(RWORK);
+    free(AT);
 }
 
 
@@ -212,143 +212,143 @@ SUBROUTINE DORMQR( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC,
 
 */
 
-	real *AT=new real[N*N];
-	real *TAU=new real[N];
-	//transpose_matrix(N, A, AT);
-	matrix_copy(N, N, A, AT);
-	
-	int M=N,LDA=N;
-	int INFO=0;
-	int LWORK = 4*N; 
-	real *WORK=new real[LWORK];
+    real *AT=new real[N*N];
+    real *TAU=new real[N];
+    //transpose_matrix(N, A, AT);
+    matrix_copy(N, N, A, AT);
+    
+    int M=N,LDA=N;
+    int INFO=0;
+    int LWORK = 4*N; 
+    real *WORK=new real[LWORK];
 
-	#ifdef real_double		
-	//DGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
-		dgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
-		if(INFO!=0){
-			printf("DGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif
-	#ifdef real_float	
-		//FGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
-		sgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
-		if(INFO!=0){
-			printf("SGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif	
-
-
+    #ifdef real_double      
+    //DGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
+        dgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
+        if(INFO!=0){
+            printf("DGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif
+    #ifdef real_float   
+        //FGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
+        sgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
+        if(INFO!=0){
+            printf("SGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif  
 
 
-	//transpose_matrix(N, AT, R);
-	matrix_copy(N, N, AT, R);
-	
-	for(int j=0;j<N-1;j++){
-		for(int i=N-1;i>j;i--){
-			R[I2(i,j,N)]=0.0;	//remove (v)-s below diagonal
-		}
-	}
-	
 
-	char SIDE='L';
-	char TRANS='N'; //transposed output
-	int K=N, LDC=N;
-	Ident(N, Q);
-	#ifdef real_double	
-	dormqr_(&SIDE, &TRANS, &M, &N, &K, 
+
+    //transpose_matrix(N, AT, R);
+    matrix_copy(N, N, AT, R);
+    
+    for(int j=0;j<N-1;j++){
+        for(int i=N-1;i>j;i--){
+            R[I2(i,j,N)]=0.0;   //remove (v)-s below diagonal
+        }
+    }
+    
+
+    char SIDE='L';
+    char TRANS='N'; //transposed output
+    int K=N, LDC=N;
+    Ident(N, Q);
+    #ifdef real_double  
+    dormqr_(&SIDE, &TRANS, &M, &N, &K, 
                     AT, &LDA, TAU, 
                     Q, &LDC,
                     WORK, &LWORK, &INFO );
-	if(INFO!=0){
-		printf("DORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
-		exit(-1);
-	}
+    if(INFO!=0){
+        printf("DORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
+        exit(-1);
+    }
 
-	#endif	
-	#ifdef real_float		
-	sormqr_(&SIDE, &TRANS, &M, &N, &K, 
+    #endif  
+    #ifdef real_float       
+    sormqr_(&SIDE, &TRANS, &M, &N, &K, 
                     AT, &LDA, TAU, 
                     Q, &LDC,
                     WORK, &LWORK, &INFO );
-	if(INFO!=0){
-		printf("SORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
-		exit(-1);
-	}
-	#endif
+    if(INFO!=0){
+        printf("SORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
+        exit(-1);
+    }
+    #endif
 
 
 
 
-	//we have A=QR in Q and in R =)
+    //we have A=QR in Q and in R =)
 
-	delete [] AT, WORK, TAU;
+    delete [] AT, WORK, TAU;
 }
 
 void QR_square_matrix_no_R(real *A, int N, real *Q){
 
 
-	real *AT=new real[N*N];
-	real *TAU=new real[N];
-	//transpose_matrix(N, A, AT);
-	matrix_copy(N, N, A, AT);
-	int M=N,LDA=N;
-	int INFO=0;
-	int LWORK = 4*N; 
-	real *WORK=new real[LWORK];
-	#ifdef real_double	
-		//DGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
-		dgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
-		if(INFO!=0){
-			printf("DGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif	
-	#ifdef real_float		
-		//FGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
-		sgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
-		if(INFO!=0){
-			printf("SGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif
+    real *AT=new real[N*N];
+    real *TAU=new real[N];
+    //transpose_matrix(N, A, AT);
+    matrix_copy(N, N, A, AT);
+    int M=N,LDA=N;
+    int INFO=0;
+    int LWORK = 4*N; 
+    real *WORK=new real[LWORK];
+    #ifdef real_double  
+        //DGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
+        dgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
+        if(INFO!=0){
+            printf("DGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif  
+    #ifdef real_float       
+        //FGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
+        sgeqrf_(&M, &N, AT, &LDA, TAU, WORK, &LWORK, &INFO);
+        if(INFO!=0){
+            printf("SGEQRF: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif
 
 
 
 
 
-	char SIDE='L';
-	char TRANS='N'; //transposed output
-	int K=N, LDC=N;
-	Ident(N, Q);
-	#ifdef real_double	
-		dormqr_(&SIDE, &TRANS, &M, &N, &K, 
-	                    AT, &LDA, TAU, 
-	                    Q, &LDC,
-	                    WORK, &LWORK, &INFO );
-		if(INFO!=0){
-			printf("DORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif	
-	#ifdef real_float		
-		sormqr_(&SIDE, &TRANS, &M, &N, &K, 
-	                    AT, &LDA, TAU, 
-	                    Q, &LDC,
-	                    WORK, &LWORK, &INFO );
-		if(INFO!=0){
-			printf("SORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif
+    char SIDE='L';
+    char TRANS='N'; //transposed output
+    int K=N, LDC=N;
+    Ident(N, Q);
+    #ifdef real_double  
+        dormqr_(&SIDE, &TRANS, &M, &N, &K, 
+                        AT, &LDA, TAU, 
+                        Q, &LDC,
+                        WORK, &LWORK, &INFO );
+        if(INFO!=0){
+            printf("DORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif  
+    #ifdef real_float       
+        sormqr_(&SIDE, &TRANS, &M, &N, &K, 
+                        AT, &LDA, TAU, 
+                        Q, &LDC,
+                        WORK, &LWORK, &INFO );
+        if(INFO!=0){
+            printf("SORMQR: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif
 
 
 
 
-	//we have A=QR in Q and no R =)
+    //we have A=QR in Q and no R =)
 
-	delete [] AT, WORK, TAU;
+    delete [] AT, WORK, TAU;
 }
 
 
@@ -362,195 +362,330 @@ where T is an upper quasi-triangular matrix (the Schur form of H), and Z is the 
 
 
 extern "C" void dhseqr_(char*  JOB,char*  COMPZ, 
-					int* N, int* ILO, 
-					int* IHI,	real *H,
-					int* LDH, 
-					real *WR, real *WI,
-					real *Z, int* LDZ,
-					real* WORK,
-					int* LWORK,int *INFO);
+                    int* N, int* ILO, 
+                    int* IHI,   real *H,
+                    int* LDH, 
+                    real *WR, real *WI,
+                    real *Z, int* LDZ,
+                    real* WORK,
+                    int* LWORK,int *INFO);
 
 
-1:	JOB='E'
-	Eigenvalues only are required.
-	JOB='S'
-	The Schur form T is required.
-	
+1:  JOB='E'
+    Eigenvalues only are required.
+    JOB='S'
+    The Schur form T is required.
+    
 2:     COMPZ – CHARACTER*1Input
-	On entry: indicates whether the
-	Schur vectors are to be computed.
+    On entry: indicates whether the
+    Schur vectors are to be computed.
 
-	COMPZ='N'
-	No Schur vectors are computed (and the array Z is not referenced).
-	COMPZ='I' The Schur vectors of H are computed (and the array Z is initialized by the routine).
-	COMPZ='V'The Schur vectors of A are computed (and the array Z must contain the matrix Q on entry). 
-	Constraint:  COMPZ='N', 'V' or 'I'.
+    COMPZ='N'
+    No Schur vectors are computed (and the array Z is not referenced).
+    COMPZ='I' The Schur vectors of H are computed (and the array Z is initialized by the routine).
+    COMPZ='V'The Schur vectors of A are computed (and the array Z must contain the matrix Q on entry). 
+    Constraint:  COMPZ='N', 'V' or 'I'.
 3:  N – INTEGERInput
-	On entry: n, the order of the matrix H.
+    On entry: n, the order of the matrix H.
 
 4: ILO – INTEGER
 5: IHI – INTEGER
-	IHI – INTEGERInput 
-	On entry: if the matrix A has been balanced by
-	F08NHF (DGEBAL), then ILO and IHI must contain the values returned by that routine. Otherwise, ILO must be set to 1 and IHI to N.Constraint:
-  	ILO≥1 and min⁡ILO,N≤IHI≤N.
+    IHI – INTEGERInput 
+    On entry: if the matrix A has been balanced by
+    F08NHF (DGEBAL), then ILO and IHI must contain the values returned by that routine. Otherwise, ILO must be set to 1 and IHI to N.Constraint:
+    ILO≥1 and min⁡ILO,N≤IHI≤N.
 
 6:  H(LDH,*) – real precision array
-	Note: the second dimension of the array H must be at least max⁡1,N.
-	On entry: the n by n upper Hessenberg matrix H, as returned by 	F08NEF (DGEHRD).
-	On exit: if JOB=E, the array contains no useful information. 
-	If JOB=S, H is overwritten by the upper	quasi-triangular matrix T from the Schur decomposition (the Schur form) unless INFO>0.	
+    Note: the second dimension of the array H must be at least max⁡1,N.
+    On entry: the n by n upper Hessenberg matrix H, as returned by  F08NEF (DGEHRD).
+    On exit: if JOB=E, the array contains no useful information. 
+    If JOB=S, H is overwritten by the upper quasi-triangular matrix T from the Schur decomposition (the Schur form) unless INFO>0.  
 
 7:  LDH – INTEGER
-	On entry: the first dimension of the array H as declared in the (sub)program from which F08PEF (DHSEQR) is called.Constraint: LDH≥max⁡1,N.
+    On entry: the first dimension of the array H as declared in the (sub)program from which F08PEF (DHSEQR) is called.Constraint: LDH≥max⁡1,N.
 8:  WR(*) – real precision arrayOutput
 9:  WI(*) – real precision arrayOutput
-	Note: the dimension of the array WR and WI must be at least max⁡1,N.
+    Note: the dimension of the array WR and WI must be at least max⁡1,N.
 
-	On exit: the real and imaginary parts, respectively, of the computed eigenvalues, unless INFO>0 (in which case see Section 6). Complex conjugate pairs of eigenvalues appear consecutively with the eigenvalue having positive imaginary part first. The eigenvalues are stored in the same order as on the diagonal of the Schur form T (if computed); see Section 8 for details.
+    On exit: the real and imaginary parts, respectively, of the computed eigenvalues, unless INFO>0 (in which case see Section 6). Complex conjugate pairs of eigenvalues appear consecutively with the eigenvalue having positive imaginary part first. The eigenvalues are stored in the same order as on the diagonal of the Schur form T (if computed); see Section 8 for details.
 
 10:  Z(LDZ,*) – real precision arrayInput/Output
-	Note: the second dimension of the array Z must be at least max⁡1,N if COMPZ = 'V' or 'I' and at least 1 if COMPZ=N. 
-	On entry: if COMPZ=V, Z must contain the orthogonal matrix Q from the reduction to Hessenberg form.
-	If COMPZ=I, Z need not be set.
-	On exit: if COMPZ = 'V' or 'I', Z contains the orthogonal matrix of the required Schur vectors, unless INFO>0.
-	If COMPZ=N, Z is not referenced.
+    Note: the second dimension of the array Z must be at least max⁡1,N if COMPZ = 'V' or 'I' and at least 1 if COMPZ=N. 
+    On entry: if COMPZ=V, Z must contain the orthogonal matrix Q from the reduction to Hessenberg form.
+    If COMPZ=I, Z need not be set.
+    On exit: if COMPZ = 'V' or 'I', Z contains the orthogonal matrix of the required Schur vectors, unless INFO>0.
+    If COMPZ=N, Z is not referenced.
 
 11:  LDZ – INTEGERInput
-	On entry: the first dimension of the array Z as declared in the (sub)program from which F08PEF (DHSEQR) is called.Constraints:
+    On entry: the first dimension of the array Z as declared in the (sub)program from which F08PEF (DHSEQR) is called.Constraints:
    if COMPZ = 'V' or 'I', LDZ≥max⁡1,N; 
    if COMPZ=N, LDZ≥1. 
 
 12:  WORK(*) – real precision arrayWorkspace
-	Note: the dimension of the array WORK must be at least max⁡1,LWORK.
-	On exit: if INFO=0, WORK1 contains the minimum value of LWORK required for optimal performance.
+    Note: the dimension of the array WORK must be at least max⁡1,LWORK.
+    On exit: if INFO=0, WORK1 contains the minimum value of LWORK required for optimal performance.
 
 13: LWORK – INTEGERInput
-	On entry: the dimension of the array WORK as declared in the (sub)program from which F08PEF (DHSEQR) is called, unless LWORK=-1, in which case a workspace query is assumed and the routine only calculates the minimum dimension of WORK.Constraint:
-  	LWORK≥max⁡1,N or LWORK=-1.
+    On entry: the dimension of the array WORK as declared in the (sub)program from which F08PEF (DHSEQR) is called, unless LWORK=-1, in which case a workspace query is assumed and the routine only calculates the minimum dimension of WORK.Constraint:
+    LWORK≥max⁡1,N or LWORK=-1.
 
 
 14: INFO – INTEGEROutputOn exit: INFO=0 unless the routine detects an error (see Section 6).
 
 Results:
-	If all the computed eigenvalues are real, T is upper triangular, and the diagonal elements of T are the eigenvalues; WRi=tii, for i=1,2,…,n and WIi=0.0.
-	
-	If some of the computed eigenvalues form complex conjugate pairs, then T has 2 by 2 diagonal blocks.  Each diagonal block has the form
+    If all the computed eigenvalues are real, T is upper triangular, and the diagonal elements of T are the eigenvalues; WRi=tii, for i=1,2,…,n and WIi=0.0.
+    
+    If some of the computed eigenvalues form complex conjugate pairs, then T has 2 by 2 diagonal blocks.  Each diagonal block has the form
 
-	(  t_{i,i}     t_{i,i+1}  )     (α    β)
-	(                         )  =  (      )
-	(  t_{i+1,i}  t_{i+1,i+1} )     (γ    α)
+    (  t_{i,i}     t_{i,i+1}  )     (α    β)
+    (                         )  =  (      )
+    (  t_{i+1,i}  t_{i+1,i+1} )     (γ    α)
  
 
 
-	where βγ<0.  The corresponding eigenvalues are α±sqrt(βγ); WRi=WRi+1=α; WIi=+sqrt(|βγ|); WIi+1=-WIi.
-	
-	test:
+    where βγ<0.  The corresponding eigenvalues are α±sqrt(βγ); WRi=WRi+1=α; WIi=+sqrt(|βγ|); WIi+1=-WIi.
+    
+    test:
 
-	real *H=new real(4*4);
-	int m=4;
-	H[I2m(0,0)]=0.350000000000000; H[I2m(0,1)]=-0.116000000000000;  H[I2m(0,2)]=-0.388600000000000; H[I2m(0,3)]=-0.294200000000000;
-	H[I2m(1,0)]=-0.514000000000000; H[I2m(1,1)]=0.122500000000000;  H[I2m(1,2)]=0.100400000000000; H[I2m(1,3)]=0.112600000000000;
-	H[I2m(2,0)]=0; H[I2m(2,1)]=0.644300000000000;  H[I2m(2,2)]=-0.135700000000000; H[I2m(2,3)]=-0.0977000000000000;
-	H[I2m(3,0)]=0; H[I2m(3,1)]=0;  H[I2m(3,2)]=0.426200000000000; H[I2m(3,3)]=0.163200000000000;
+    real *H=new real(4*4);
+    int m=4;
+    H[I2m(0,0)]=0.350000000000000; H[I2m(0,1)]=-0.116000000000000;  H[I2m(0,2)]=-0.388600000000000; H[I2m(0,3)]=-0.294200000000000;
+    H[I2m(1,0)]=-0.514000000000000; H[I2m(1,1)]=0.122500000000000;  H[I2m(1,2)]=0.100400000000000; H[I2m(1,3)]=0.112600000000000;
+    H[I2m(2,0)]=0; H[I2m(2,1)]=0.644300000000000;  H[I2m(2,2)]=-0.135700000000000; H[I2m(2,3)]=-0.0977000000000000;
+    H[I2m(3,0)]=0; H[I2m(3,1)]=0;  H[I2m(3,2)]=0.426200000000000; H[I2m(3,3)]=0.163200000000000;
 
-	H=Z T Z':
+    H=Z T Z':
 
-	Z=		
-	-0.655090395498507	-0.345013851172607	-0.103603585070971	0.664144798507900
-	0.597210340109255	-0.170562202236235	0.524576452614526	0.582295363365769
-	0.384529263999376	-0.714337682936540	-0.578893336510767	-0.0821061800864399
-	0.257553156688664	0.584461848544650	-0.615604050885172	0.461630124243687
+    Z=      
+    -0.655090395498507  -0.345013851172607  -0.103603585070971  0.664144798507900
+    0.597210340109255   -0.170562202236235  0.524576452614526   0.582295363365769
+    0.384529263999376   -0.714337682936540  -0.578893336510767  -0.0821061800864399
+    0.257553156688664   0.584461848544650   -0.615604050885172  0.461630124243687
 
-	T=
-	0.799520573289046	0.00605342023308397	-0.114442607963615	-0.0335132570006511
-	0					-0.0994330557135366	-0.648335317381854	-0.202608709663576
-	0					0.247741704276945	-0.0994330557135366	-0.347395407590160
-	0					0					0					-0.100654461861972
+    T=
+    0.799520573289046   0.00605342023308397 -0.114442607963615  -0.0335132570006511
+    0                   -0.0994330557135366 -0.648335317381854  -0.202608709663576
+    0                   0.247741704276945   -0.0994330557135366 -0.347395407590160
+    0                   0                   0                   -0.100654461861972
 
-	eigs:
-	   7.9952e-01 
-	  -9.9433e-02 + 4.0077e-01i
-	  -9.9433e-02 - 4.0077e-01i
-	  -1.0065e-01 
+    eigs:
+       7.9952e-01 
+      -9.9433e-02 + 4.0077e-01i
+      -9.9433e-02 - 4.0077e-01i
+      -1.0065e-01 
 
 */
 
-/*	
-	//DEBUG!!!!
+/*  
+    //DEBUG!!!!
 
-	real *Ht=new real[4*4];
-	int m=4;
-	Ht[I2(0,0,m)]=0.350000000000000; Ht[I2(0,1,m)]=-0.116000000000000;  Ht[I2(0,2,m)]=-0.388600000000000; Ht[I2(0,3,m)]=-0.294200000000000;
-	Ht[I2(1,0,m)]=-0.514000000000000; Ht[I2(1,1,m)]=0.122500000000000;  Ht[I2(1,2,m)]=0.100400000000000; Ht[I2(1,3,m)]=0.112600000000000;
-	Ht[I2(2,0,m)]=0; Ht[I2(2,1,m)]=0.644300000000000;  Ht[I2(2,2,m)]=-0.135700000000000; Ht[I2(2,3,m)]=-0.0977000000000000;
-	Ht[I2(3,0,m)]=0; Ht[I2(3,1,m)]=0;  Ht[I2(3,2,m)]=0.426200000000000; Ht[I2(3,3,m)]=0.163200000000000;
-	
+    real *Ht=new real[4*4];
+    int m=4;
+    Ht[I2(0,0,m)]=0.350000000000000; Ht[I2(0,1,m)]=-0.116000000000000;  Ht[I2(0,2,m)]=-0.388600000000000; Ht[I2(0,3,m)]=-0.294200000000000;
+    Ht[I2(1,0,m)]=-0.514000000000000; Ht[I2(1,1,m)]=0.122500000000000;  Ht[I2(1,2,m)]=0.100400000000000; Ht[I2(1,3,m)]=0.112600000000000;
+    Ht[I2(2,0,m)]=0; Ht[I2(2,1,m)]=0.644300000000000;  Ht[I2(2,2,m)]=-0.135700000000000; Ht[I2(2,3,m)]=-0.0977000000000000;
+    Ht[I2(3,0,m)]=0; Ht[I2(3,1,m)]=0;  Ht[I2(3,2,m)]=0.426200000000000; Ht[I2(3,3,m)]=0.163200000000000;
+    
 
-	int N=4;//debug!
-	print_matrix("Ht.dat", N, N, Ht);
-	real *Z=new real [N*N];
+    int N=4;//debug!
+    print_matrix("Ht.dat", N, N, Ht);
+    real *Z=new real [N*N];
 */
 
-	//print_matrix("Ht.dat", N, N, H);
-	char JOB='S';
-	char COMPZ='I';
-	int ILO=1;
-	int IHI=N;
-	int LDH=N;
-	real *WR=new real [N];
-	real *WI=new real [N];
-	real *HT=new real [N*N];
+    //print_matrix("Ht.dat", N, N, H);
+    char JOB='S';
+    char COMPZ='I';
+    int ILO=1;
+    int IHI=N;
+    int LDH=N;
+    real *WR=new real [N];
+    real *WI=new real [N];
+    real *HT=new real [N*N];
 
-	//transpose_matrix(N, Ht, HT);
-	int LDZ=N;
-	int INFO=0;
-	int LWORK = 4*N; 
-	real *WORK=new real[LWORK];
+    //transpose_matrix(N, Ht, HT);
+    int LDZ=N;
+    int INFO=0;
+    int LWORK = 4*N; 
+    real *WORK=new real[LWORK];
 
-	//DEBUG: change /*Ht*/ ... in function call
+    //DEBUG: change /*Ht*/ ... in function call
 
-	#ifdef real_double
-		dhseqr_(&JOB, &COMPZ, &N, &ILO, 
-					&IHI, H	/*Ht*/,
-					&LDH, 
-					WR, WI,
-					/*Z*/ Q, &LDZ,
-					WORK,
-					&LWORK, &INFO);
-
-
-		if(INFO!=0){
-			printf("DHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif
-	#ifdef real_float
-		shseqr_(&JOB, &COMPZ, &N, &ILO, 
-					&IHI, H	/*Ht*/,
-					&LDH, 
-					WR, WI,
-					/*Z*/ Q, &LDZ,
-					WORK,
-					&LWORK, &INFO);
+    #ifdef real_double
+        dhseqr_(&JOB, &COMPZ, &N, &ILO, 
+                    &IHI, H /*Ht*/,
+                    &LDH, 
+                    WR, WI,
+                    /*Z*/ Q, &LDZ,
+                    WORK,
+                    &LWORK, &INFO);
 
 
-		if(INFO!=0){
-			printf("SHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
-			exit(-1);
-		}
-	#endif
-	/*
-	//DEBUG!!!
-	//transpose_matrix(N, HT, Ht);
-	print_matrix("T.dat", N, N, Ht);
-	//transpose_matrix(N, Z, HT);
-	print_matrix("Z.dat", N, N, Z);
-	
-	delete [] Ht, HT ,Z;
+        if(INFO!=0){
+            printf("DHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif
+    #ifdef real_float
+        shseqr_(&JOB, &COMPZ, &N, &ILO, 
+                    &IHI, H /*Ht*/,
+                    &LDH, 
+                    WR, WI,
+                    /*Z*/ Q, &LDZ,
+                    WORK,
+                    &LWORK, &INFO);
+
+
+        if(INFO!=0){
+            printf("SHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif
+    /*
+    //DEBUG!!!
+    //transpose_matrix(N, HT, Ht);
+    print_matrix("T.dat", N, N, Ht);
+    //transpose_matrix(N, Z, HT);
+    print_matrix("Z.dat", N, N, Z);
+    
+    delete [] Ht, HT ,Z;
 */
-	
-	delete [] WORK, WR, WI; 
-	
+    
+    delete [] WORK, WR, WI; 
+    
+
+}
+
+
+
+void solve_upper_triangular_system(int N_full, int N_reduced, real *A, real *b)
+{
+/*
+DTRTRS solves a triangular system of the form
+
+    A * X = B  or  A**T * X = B,
+
+ where A is a triangular matrix of order N, and B is an N-by-NRHS
+ matrix.  A check is made to verify that A is nonsingular.
+
+ Parameters:
+    [in]    UPLO    
+
+              UPLO is CHARACTER*1
+              = 'U':  A is upper triangular;
+              = 'L':  A is lower triangular.
+
+    [in]    TRANS   
+
+              TRANS is CHARACTER*1
+              Specifies the form of the system of equations:
+              = 'N':  A * X = B  (No transpose)
+              = 'T':  A**T * X = B  (Transpose)
+              = 'C':  A**H * X = B  (Conjugate transpose = Transpose)
+
+    [in]    DIAG    
+
+              DIAG is CHARACTER*1
+              = 'N':  A is non-unit triangular;
+              = 'U':  A is unit triangular.
+
+    [in]    N   
+
+              N is INTEGER
+              The order of the matrix A.  N >= 0.
+
+    [in]    NRHS    
+
+              NRHS is INTEGER
+              The number of right hand sides, i.e., the number of columns
+              of the matrix B.  NRHS >= 0.
+
+    [in]    A   
+
+              A is DOUBLE PRECISION array, dimension (LDA,N)
+              The triangular matrix A.  If UPLO = 'U', the leading N-by-N
+              upper triangular part of the array A contains the upper
+              triangular matrix, and the strictly lower triangular part of
+              A is not referenced.  If UPLO = 'L', the leading N-by-N lower
+              triangular part of the array A contains the lower triangular
+              matrix, and the strictly upper triangular part of A is not
+              referenced.  If DIAG = 'U', the diagonal elements of A are
+              also not referenced and are assumed to be 1.
+
+    [in]    LDA 
+
+              LDA is INTEGER
+              The leading dimension of the array A.  LDA >= max(1,N).
+
+    [in,out]    B   
+
+              B is DOUBLE PRECISION array, dimension (LDB,NRHS)
+              On entry, the right hand side matrix B.
+              On exit, if INFO = 0, the solution matrix X.
+
+    [in]    LDB 
+
+              LDB is INTEGER
+              The leading dimension of the array B.  LDB >= max(1,N).
+
+    [out]   INFO    
+
+              INFO is INTEGER
+              = 0:  successful exit
+              < 0: if INFO = -i, the i-th argument had an illegal value
+              > 0: if INFO = i, the i-th diagonal element of A is zero,
+                   indicating that the matrix is singular and the solutions
+                   X have not been computed.
+*/
+
+    print_matrix("A_triang.dat", N_reduced, N_reduced, A);
+    print_vector("b_triang.dat", N_reduced, b);
+
+    char UPLO='U';
+    char TRANS='N';
+    char DIAG='N';
+    int N=N_full;
+    int NRHS=1;
+    int LDA=N_reduced;
+    int LDB=N_reduced;
+    int INFO=0;
+  
+    #ifdef real_double
+        dtrtrs_(&UPLO, 
+            &TRANS,
+            &DIAG, 
+            &N,
+            &NRHS, 
+            A,
+            &LDA, 
+            b,
+            &LDB, 
+            &INFO);
+
+
+        if(INFO!=0){
+            printf("DTRTRS: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif
+    #ifdef real_float
+        strtrs_(&UPLO, 
+            &TRANS,
+            &DIAG, 
+            &N,
+            &NRHS, 
+            A,
+            &LDA, 
+            b,
+            &LDB, 
+            &INFO);
+
+
+        if(INFO!=0){
+            printf("STRTRS: Argument %i has an illegal value. Aborting.\n", INFO);
+            exit(-1);
+        }
+    #endif
+
+        print_vector("x_triang.dat", N_reduced, b);
 
 }

@@ -46,15 +46,15 @@ real rand_normal(real mean, real stddev)
 
 
 void set_matrix(int Row, int Col, real *mat, real val){
-	for (int i = 0; i<Row; ++i)
-	{
-		for(int j=0;j<Col;j++)
-		{
+    for (int i = 0; i<Row; ++i)
+    {
+        for(int j=0;j<Col;j++)
+        {
 
-			mat[I2(i,j,Row)]=rand_normal(0.0, val);
+            mat[I2(i,j,Row)]=rand_normal(0.0, val);
 
-		}
-	}
+        }
+    }
 
 }
 
@@ -62,156 +62,159 @@ void set_matrix(int Row, int Col, real *mat, real val){
 
 int main (int argc, char const* argv[])
 {
-	
+    
 
-	srand ( time(NULL) ); //seed pseudo_random
-		
-	int N=2300000;
-	int k=6;
-	int m=k*3;
-	
-	real *V, *V1, *A, *H, *R, *Q, *H1, *H2; //matrixes on CPU
-	real *vec_f1, *vec_v, *vec_w, *vec_c, *vec_h, *vec_f, *vec_q; //vectors on CPU
+    srand ( time(NULL) ); //seed pseudo_random
+        
+    int N=2300000;
+    int k=8;
+    int m=k*3;
+    
+    real *V, *V1, *A, *H, *R, *Q, *H1, *H2; //matrixes on CPU
+    real *vec_f1, *vec_v, *vec_w, *vec_c, *vec_h, *vec_f, *vec_q; //vectors on CPU
 
-	real *V_d, *V1_d, *A_d, *H_d, *R_d, *Q_d, *H1_d, *H2_d; //matrixes on GPU
-	real *vec_f1_d, *vec_v_d, *vec_w_d, *vec_c_d, *vec_h_d, *vec_f_d, *vec_q_d; //vectors on GPU
+    real *V_d, *V1_d, *A_d, *H_d, *R_d, *Q_d, *H1_d, *H2_d; //matrixes on GPU
+    real *vec_f1_d, *vec_v_d, *vec_w_d, *vec_c_d, *vec_h_d, *vec_f_d, *vec_q_d; //vectors on GPU
 
-	real complex *eigenvaluesA=new real complex[k];
+    real complex *eigenvaluesA=new real complex[k];
 
-//	N = read_matrix_size("Jacobian_Im_20_1_1_4p0_32_8_8.dat");
-    char *matrix_file_name="Jacobian_1_2D.dat";
-	N = read_matrix_size(matrix_file_name);
-	Arnoldi::allocate_real(N,N,1, 1,&A);
-	Arnoldi::allocate_real(N,m,1, 2, &V, &V1);
-	Arnoldi::allocate_real(N,1,1, 4, &vec_f1, &vec_f, &vec_w, &vec_v);
-	Arnoldi::allocate_real(m,1,1, 3, &vec_c, &vec_h, &vec_q);
-	Arnoldi::allocate_real(m,m,1, 5, &H, &H1, &H2, &R, &Q);
-	//set initial matrixes and vectors
-//	read_matrix("Jacobian_Im_20_1_1_4p0_32_8_8.dat", N, N, A);
-	read_matrix(matrix_file_name, N, N, A);
-
-
-	
-//A	if(read_matrix("A0.dat", N, N, A)==-1){
-//A		set_matrix(N, N, A, 1.0);
-//A		print_matrix("A0.dat", N, N, A);
-//A	}
-//XX	if(read_matrix("V0.dat", N, m, V)==-1){
-//XX		set_matrix(N, m, V, 1.0);
-//XX		print_matrix("V0.dat", N, m, V);
-//XX	}	
-//	if(read_matrix("H.dat", m, m, H)==-1){
-//		set_matrix(m, m, H, 1.0);
-//		print_matrix("H.dat", m, m, H);
-//	}
-
-//	if(read_vector("f0.dat",  N,  vec_f)==-1){
-		for (int i = 0; i < N; ++i)
-		{
-			vec_f[i]=rand_normal(0.0, 1.0);
-		}
-//		print_vector("f0.dat", N, vec_f);
-//	}
-	if(read_vector("c0.dat",  m,  vec_c)==-1){
-		for (int i = 0; i < m; ++i)
-		{
-			vec_c[i]=rand_normal(0.0, 1.0);
-		}
-		print_vector("c0.dat", m, vec_c);
-	}
-	printf("\nCPU Preperations done.\n");
-	//preparations	
-	if(!Arnoldi::InitCUDA(-1)) {
-		return 0;
-	}		
-//	cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
-	
-	Arnoldi::device_allocate_all_real(N,N, 1, 1,&A_d);
-	Arnoldi::to_device_from_host_real_cpy(A_d, A, N, N,1);
-
-	Arnoldi::device_allocate_all_real(N,1,1, 1, &vec_f_d);
-	Arnoldi::to_device_from_host_real_cpy(vec_f_d, vec_f, N, 1,1);
-
-	
-
-	real res_tol=1.0;
-	cublasHandle_t handle;		//init cublas
-	cublasStatus_t ret;
-	ret = cublasCreate(&handle);
-	Arnoldi::checkError(ret, " cublasCreate(). ");
-
-	Ax_struct_1 *SC=new Ax_struct_1[1];
-	SC->N=N;
-	SC->handle=handle;
-	SC->A_d=A_d;
+//  N = read_matrix_size("Jacobian_Im_20_1_1_4p0_32_8_8.dat");
+    //char *matrix_file_name="Jacobian_1_2D.dat";
+    //char *matrix_file_name="Jacobian_B.dat";
+    //char *matrix_file_name="Jacobian_D.dat";
+    char *matrix_file_name="Jacobian_3D.dat";
+    N = read_matrix_size(matrix_file_name);
+    Arnoldi::allocate_real(N,N,1, 1,&A);
+    Arnoldi::allocate_real(N,m,1, 2, &V, &V1);
+    Arnoldi::allocate_real(N,1,1, 4, &vec_f1, &vec_f, &vec_w, &vec_v);
+    Arnoldi::allocate_real(m,1,1, 3, &vec_c, &vec_h, &vec_q);
+    Arnoldi::allocate_real(m,m,1, 5, &H, &H1, &H2, &R, &Q);
+    //set initial matrixes and vectors
+//  read_matrix("Jacobian_Im_20_1_1_4p0_32_8_8.dat", N, N, A);
+    read_matrix(matrix_file_name, N, N, A);
 
 
-	//definition of auxiliary vectors to be used in matrix Exponent estimation
-	real *vec_step0_d, *vec_step1_d, *vec_step2_d;
-	Arnoldi::device_allocate_all_real(N,1,1, 3, &vec_step0_d, &vec_step1_d, &vec_step2_d);
+    
+//A if(read_matrix("A0.dat", N, N, A)==-1){
+//A     set_matrix(N, N, A, 1.0);
+//A     print_matrix("A0.dat", N, N, A);
+//A }
+//XX    if(read_matrix("V0.dat", N, m, V)==-1){
+//XX        set_matrix(N, m, V, 1.0);
+//XX        print_matrix("V0.dat", N, m, V);
+//XX    }   
+//  if(read_matrix("H.dat", m, m, H)==-1){
+//      set_matrix(m, m, H, 1.0);
+//      print_matrix("H.dat", m, m, H);
+//  }
+
+//  if(read_vector("f0.dat",  N,  vec_f)==-1){
+        for (int i = 0; i < N; ++i)
+        {
+            vec_f[i]=rand_normal(0.0, 1.0);
+        }
+//      print_vector("f0.dat", N, vec_f);
+//  }
+    if(read_vector("c0.dat",  m,  vec_c)==-1){
+        for (int i = 0; i < m; ++i)
+        {
+            vec_c[i]=rand_normal(0.0, 1.0);
+        }
+        print_vector("c0.dat", m, vec_c);
+    }
+    printf("\nCPU Preperations done.\n");
+    //preparations  
+    if(!Arnoldi::InitCUDA(-1)) {
+        return 0;
+    }       
+//  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+    
+    Arnoldi::device_allocate_all_real(N,N, 1, 1,&A_d);
+    Arnoldi::to_device_from_host_real_cpy(A_d, A, N, N,1);
+
+    Arnoldi::device_allocate_all_real(N,1,1, 1, &vec_f_d);
+    Arnoldi::to_device_from_host_real_cpy(vec_f_d, vec_f, N, 1,1);
+
+    
+
+    real res_tol=1.0;
+    cublasHandle_t handle;      //init cublas
+    cublasStatus_t ret;
+    ret = cublasCreate(&handle);
+    Arnoldi::checkError(ret, " cublasCreate(). ");
+
+    Ax_struct_1 *SC=new Ax_struct_1[1];
+    SC->N=N;
+    SC->handle=handle;
+    SC->A_d=A_d;
 
 
-	Ax_struct_exponential *SC_exp=new Ax_struct_exponential[1];
-	SC_exp->N=N;
-	SC_exp->tau=1.0e-2;
-	SC_exp->T=10;
-	SC_exp->shift_real=1.01;
-
-	SC_exp->BiCG_L=4;
-	SC_exp->BiCG_tol=1.0e-9;
-	SC_exp->BiCG_Iter=2*N;
-	SC_exp->handle=handle;
-
-	SC_exp->A=A_d;
-	SC_exp->vec_step0=vec_step0_d;
-	SC_exp->vec_step1=vec_step1_d;
-	SC_exp->vec_step2=vec_step2_d;
-
-//	res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N, (user_map_vector) user_Ax_function_1, (Ax_struct_1 *) SC_1,  vec_f_d, "LR", k, m, eigenvaluesA, 1.0e-12, 2000);
-	
-//	res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N, (user_map_vector) user_Ax_function, (Ax_struct *) SC,  vec_f_d, "LR", k, m, eigenvaluesA, 1.0e-12, 1000);
-
-	res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N, (user_map_vector) Axb_exponent_invert, (Ax_struct_exponential *) SC_exp, (user_map_vector) user_Ax_function_1, (Ax_struct_1 *) SC, vec_f_d, "LR", "LM", k, m, eigenvaluesA, 1.0e-9, 1000);
-
-	delete [] SC;
-	delete [] SC_exp;
-	Arnoldi::device_deallocate_all_real(3, vec_step0_d, vec_step1_d, vec_step2_d);
-	
-
-	if(res_tol>0.0)
-		printf("\n convergence in norm_C=%.05e\n", res_tol);
-	else
-		printf("\n first desired eigenvalues are exact!\n");
+    //definition of auxiliary vectors to be used in matrix Exponent estimation
+    real *vec_step0_d, *vec_step1_d, *vec_step2_d;
+    Arnoldi::device_allocate_all_real(N,1,1, 3, &vec_step0_d, &vec_step1_d, &vec_step2_d);
 
 
-	
-	//clean up
+    Ax_struct_exponential *SC_exp=new Ax_struct_exponential[1];
+    SC_exp->N=N;
+    SC_exp->tau=1.0e-2;
+    SC_exp->T=5;
+    SC_exp->shift_real=1.001;
 
-	Arnoldi::to_host_from_device_real_cpy(A, A_d, N, N,1);
-	Arnoldi::to_host_from_device_real_cpy(vec_f, vec_f_d, N, 1, 1);
+    SC_exp->BiCG_L=4;
+    SC_exp->BiCG_tol=1.0e-10;
+    SC_exp->BiCG_Iter=2*N;
+    SC_exp->handle=handle;
+
+    SC_exp->A=A_d;
+    SC_exp->vec_step0=vec_step0_d;
+    SC_exp->vec_step1=vec_step1_d;
+    SC_exp->vec_step2=vec_step2_d;
+
+//  res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N, (user_map_vector) user_Ax_function_1, (Ax_struct_1 *) SC,  vec_f_d, "LR", k, m, eigenvaluesA, 1.0e-12, 2000);
+    
+//  res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N, (user_map_vector) user_Ax_function, (Ax_struct *) SC,  vec_f_d, "LR", k, m, eigenvaluesA, 1.0e-12, 1000);
+
+    res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N, (user_map_vector) Axb_exponent_invert, (Ax_struct_exponential *) SC_exp, (user_map_vector) user_Ax_function_1, (Ax_struct_1 *) SC, vec_f_d, "LR", "LM", k, m, eigenvaluesA, 1.0e-9, 1000);
+
+    delete [] SC;
+    delete [] SC_exp;
+    Arnoldi::device_deallocate_all_real(3, vec_step0_d, vec_step1_d, vec_step2_d);
+    
+
+    if(res_tol>0.0)
+        printf("\n convergence in norm_C=%.05e\n", res_tol);
+    else
+        printf("\n first desired eigenvalues are exact!\n");
 
 
-	Arnoldi::device_deallocate_all_real(1, A_d);
-	Arnoldi::device_deallocate_all_real(1, vec_f_d);
+    
+    //clean up
+
+    Arnoldi::to_host_from_device_real_cpy(A, A_d, N, N,1);
+    Arnoldi::to_host_from_device_real_cpy(vec_f, vec_f_d, N, 1, 1);
 
 
-	print_matrix("A.dat", N, N, A);
-/*	print_matrix("V.dat", N, m, V);
-	print_matrix("V1.dat", N, m, V1);
-	print_matrix("H.dat", m, m, H);
-	print_vector("f.dat", N, vec_f);
-	print_vector("w.dat", N, vec_w);
-	print_vector("h.dat", m, vec_h);
+    Arnoldi::device_deallocate_all_real(1, A_d);
+    Arnoldi::device_deallocate_all_real(1, vec_f_d);
+
+
+    print_matrix("A.dat", N, N, A);
+/*  print_matrix("V.dat", N, m, V);
+    print_matrix("V1.dat", N, m, V1);
+    print_matrix("H.dat", m, m, H);
+    print_vector("f.dat", N, vec_f);
+    print_vector("w.dat", N, vec_w);
+    print_vector("h.dat", m, vec_h);
 */
-	Arnoldi::deallocate_real(1, A);
-	Arnoldi::deallocate_real(2, V, V1);
-	Arnoldi::deallocate_real(4, vec_f1, vec_f, vec_w, vec_v);
-	Arnoldi::deallocate_real(3, vec_c, vec_h, vec_q);
-	Arnoldi::deallocate_real(5, H, H1, H2, R, Q);
+    Arnoldi::deallocate_real(1, A);
+    Arnoldi::deallocate_real(2, V, V1);
+    Arnoldi::deallocate_real(4, vec_f1, vec_f, vec_w, vec_v);
+    Arnoldi::deallocate_real(3, vec_c, vec_h, vec_q);
+    Arnoldi::deallocate_real(5, H, H1, H2, R, Q);
     delete [] eigenvaluesA;
-	cublasDestroy(handle);
+    cublasDestroy(handle);
     cudaDeviceReset();
-	printf("\ndone.\n");
-	return 0;
+    printf("\ndone.\n");
+    return 0;
 }
 

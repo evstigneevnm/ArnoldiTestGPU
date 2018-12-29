@@ -5,6 +5,15 @@ namespace Arnoldi
 {
 
 
+real get_machine_epsilon(){
+    real epsilon = (real)1.0;
+    while (((real)1.0 + (real)0.5 * epsilon)!=(real)1.0){
+        epsilon = (real)0.5 * epsilon;
+    }
+    return epsilon;
+}
+
+
 bool InitCUDA(int GPU_number)
 {
 
@@ -434,7 +443,7 @@ void set_vector_value_GPU(int N, real val, real *vec){
 	int blocks_x=(N+BLOCKSIZE)/BLOCKSIZE;
 	dim3 blocks(blocks_x);
 	
-	set_vector_value_kernel<<< blocks, threads>>>(N, val,vec);
+	set_vector_value_kernel<<< blocks, threads>>>(N, val, vec);
 
 }
 
@@ -954,9 +963,77 @@ ldc 	input	leading dimension of a two-dimensional array used to store the matrix
 
 
 
+void constructGivensRotationMatrix_GPU(cublasHandle_t handle, real *a, real *b, real *c, real *s)
+{
+
+/*
+cublasStatus_t cublasSrotg(cublasHandle_t handle,
+                           float           *a, float           *b,
+                           float  *c, float           *s)
+cublasStatus_t cublasDrotg(cublasHandle_t handle,
+                           double          *a, double          *b,
+                           double *c, double          *s)
+cublasStatus_t cublasCrotg(cublasHandle_t handle,
+                           cuComplex       *a, cuComplex       *b,
+                           float  *c, cuComplex       *s)
+cublasStatus_t cublasZrotg(cublasHandle_t handle,
+                           cuDoubleComplex *a, cuDoubleComplex *b,
+                           double *c, cuDoubleComplex *s)
+
+This function constructs the Givens rotation matrix
+
+G = c s - s c
+
+that zeros out the second entry of a 2 × 1 vector ( a , b ) T .
+
+Then, for real numbers we can write
+
+c s - s c a b = r 0
+
+where c 2 + s 2 = 1 and r = a 2 + b 2 . 
+The parameters a and b are overwritten with r and z , respectively. 
+The value of z is such that c and s may be recovered using the following rules:
+
+( c , s ) = ( 1 - z 2 , z )  if  | z | < 1 
+( 0 . 0 , 1 . 0 )  if  | z | = 1 
+( 1 ∕ z , 1 - z 2 )  if  | z | > 1
+
+For complex numbers we can write
+...
+
+Param. | Memory    | In/out | Meaning
+
+handle |           | input  | handle to the cuBLAS library context.
+
+a | host or device | in/out | <type> scalar that is overwritten with r .
+
+b | host or device | in/out | <type> scalar that is overwritten with z .
+
+c | host or device | output | cosine element of the rotation matrix.
+
+s | host or device | output | sine element of the rotation matrix.
+
+*/
+    cublasStatus_t ret;
+    
+    #ifdef real_float
+        ret = cublasSrotg(handle, a, b, c, s);
+    #endif
+    #ifdef real_double
+        ret = cublasDrotg(handle, a, b, c, s);
+    
+    #endif
+
+    checkError(ret, " constructGivensRotationMatrix_GPU(). ");
+}
+
+
+
 
 //namespace!
 }
+
+
 
 
 

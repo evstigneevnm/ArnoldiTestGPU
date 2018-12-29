@@ -55,6 +55,19 @@ extern "C" void shseqr_(char*  JOB,char*  COMPZ,
           real* WORK,
           int* LWORK,int *INFO);
 
+//solve triangluar linear system
+extern "C" void dtrtrs_(char*   UPLO, char*   TRANS,
+        char*   DIAG, int* N,
+        int* NRHS, real* A,
+        int* LDA, real* B,
+        int*   LDB, int *INFO);
+
+extern "C" void strtrs_(char*   UPLO, char*   TRANS,
+        char*   DIAG, int* N,
+        int* NRHS, real* A,
+        int* LDA, real* B,
+        int*   LDB,int *INFO);
+
 
 void MatrixComplexEigensystem( real complex *eigenvectorsVR, real complex *eigenvaluesW, real complex *A, int N);
 
@@ -65,5 +78,6 @@ void QR_square_matrix_no_R(real *A, int N, real *Q);
 
 void Schur_Hessinberg_matrix(real *H, int Nl, real *Q);
 
+void solve_upper_triangular_system(int N_full, int N_reduced, real *A, real *b);
 
 #endif
