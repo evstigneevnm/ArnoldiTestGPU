@@ -38,7 +38,7 @@ void rotmat(const real a, const real b, real *c, real *s)
 }
 
 
-int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *basis_size, int restarts, bool verbose) //, unsigned int skip, real machine_epsilon_provided, real *residual_history
+int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, user_map_vector Precond, void *user_struct_precond, real *x, real* RHS, real *tol, int *basis_size, int restarts, bool verbose) //, unsigned int skip, real machine_epsilon_provided, real *residual_history
 {
 
     int flag = 1; //termiantion flag
@@ -96,14 +96,18 @@ int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, 
     if(verbose)
         printf("\n||b||_2=%le, ||x0||_2=%le\n",(double)bnrm, (double)vn);   
     
-    get_residualG(handle, N, Axb, user_struct, x, RHS, &r_d[0]);
+    get_residualG(handle, N, Axb, user_struct, x, RHS, &r_tilde_d[0]);
+    Precond(user_struct_precond, r_tilde_d, r_d);
     //put preconditioner here!
     error = get_errorG(handle, N, &r_d[0], bnrm);
     if(error < tolerance){
         flag = 0;       
     }
+    else{
+        printf("\ninitial residual =%le\n",(double)error); 
+    }
     if(isnan(error)){
-        printf("\nGMRES: Nans in user defined function!\n");
+        fprintf(stderr,"\nGMRES: Nans in user defined function!\n");
         flag = -3;
     }
     if(flag==1)
@@ -111,11 +115,12 @@ int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, 
         get_residualG(handle, N, Axb, user_struct, x, RHS, &r_d[0]);
 //       z = ( b-A*x );
 //       r = iM*z;         //put preconditioner here!
-        Arnoldi::vector_copy_GPU(handle, N, &r_d[0], r_tilde_d);
+        Precond(user_struct_precond, r_d, r_tilde_d);
+        //Arnoldi::vector_copy_GPU(handle, N, &r_d[0], r_tilde_d);
+        real r_norm = Arnoldi::vector_norm2_GPU(handle, N, r_tilde_d);
         Arnoldi::normalize_vector_GPU(handle, N, r_tilde_d); 
 
         Arnoldi::set_matrix_colomn_GPU(N, Krylov_size, V_d, r_tilde_d, 0);  //       V(:,1) = r / norm( r );
-        real r_norm = Arnoldi::vector_norm2_GPU(handle, N, r_d);
         Arnoldi::set_vector_value_GPU(1, r_norm, &e1_d[0]);               //       s = norm( r )*e1;
         e1_h[0]=r_norm;
 
@@ -123,26 +128,27 @@ int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, 
         for(int i=0;i<Krylov_size;i++){
 //          global_iter=global_iter+1;
             Arnoldi::vector_copy_GPU(handle, N, &V_d[i*N], vl_d); //         vl=V(:,i);
-            Axb(user_struct,vl_d,w_d);           //         z = A*vl;
+            Axb(user_struct, vl_d, r_d);           //         z = A*vl;
 //          w = iM * z;                      //put preconditioner here!             
+            Precond(user_struct_precond, r_d, w_d);
             for(int k=0;k<=i;k++){            //         for k = 1:i,
                 Arnoldi::vector_copy_GPU(handle, N, &V_d[k*N], vl_d);//             vl=V(:,k);
                 real alpha = Arnoldi::vector_dot_product_GPU(handle, N, w_d, vl_d); //              alpha=w'*vl;
                 if(isnan(alpha)){
-                    printf("\n   GMRES: Nans in basis construciton!\n");
+                    fprintf(stderr,"\n   GMRES: Nans in basis construciton!\n");
                     flag = -3;
                     break;
                 }
                 Arnoldi::vectors_add_GPU(handle, N, -alpha, vl_d, w_d);//             w = w - alpha*vl;
                 real c_norm = 1.0;//             c=1;
                 int orth_it = 0;//             orth_it=0;
-                while(c_norm>100*machine_epsilon){     //             while (norm(c)>100*machine_epsilon)
+                while(c_norm>1000*machine_epsilon){     //             while (norm(c)>100*machine_epsilon)
                     real c = Arnoldi::vector_dot_product_GPU(handle, N, w_d, vl_d); //                  c = w'*vl;
                     c_norm = fabsf(c);
                     Arnoldi::vectors_add_GPU(handle, N, -c, vl_d, w_d);//                  w=w-c.*vl;
                     alpha = alpha + c;//                  alpha=alpha+c;
                     if(orth_it>10){//                  if orth_it>10
-                        printf("\n    Gram-Schmidt orthogonalization error at %i, %le\n",i, (double)fabsf(c));
+                        fprintf(stderr,"\n    Gram-Schmidt orthogonalization error at %i, %le\n",i, (double)fabsf(c));
                         //                     str=sprintf('Arnoldi orthogonalization error at %i, %e',i,norm(c));
                         //                     disp(str);
                         flag = -2;
@@ -165,7 +171,7 @@ int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, 
             for(int k=0;k<i;k++){ //      for k = 1:i-1,                              % apply Givens rotation
                 real temp = cs_h[k]*H_h[I2(k, i, Krylov_size)] + sn_h[k]*H_h[I2(k+1, i, Krylov_size)];
                 H_h[I2(k+1, i, Krylov_size)] = -sn_h[k]*H_h[I2(k, i, Krylov_size)] + cs_h[k]*H_h[I2(k+1, i, Krylov_size)];
-                H_h[I2(k, i, Krylov_size)]   = temp;
+                H_h[I2(k, i, Krylov_size)] = temp;
                 //      end
             }
 
@@ -219,7 +225,6 @@ int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, 
 
         if( error <= tolerance ){
             flag=0;
-            basis_size[0]=(Krylov_size+1)*(iter+1);
             break;
         }
         for(int j=0;j<Krylov_size;j++){
@@ -234,9 +239,11 @@ int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, 
 //       r = iM*z;        
         get_residualG(handle, N, Axb, user_struct, x, RHS, &r_d[0]);
         //Put preconditioner here!
-        Arnoldi::vector_copy_GPU(handle, N, &r_d[0], r_tilde_d);
+        Precond(user_struct_precond, r_d, r_tilde_d);
+        //Arnoldi::vector_copy_GPU(handle, N, &r_d[0], r_tilde_d);
+
 //       s(i+1) = norm(r);
-        e1_h[Krylov_size] = Arnoldi::vector_norm2_GPU(handle, N, r_d);
+        e1_h[Krylov_size] = Arnoldi::vector_norm2_GPU(handle, N, r_tilde_d);
         error=e1_h[Krylov_size]/bnrm;
 //       error = s(i+1) / bnrm2;                        % check convergence
         if ( error <= tolerance ){
@@ -251,19 +258,19 @@ int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, 
     if(flag == 1){
         basis_size[0]=(Krylov_size)*(restarts); 
     }
-    cudaError_t cuerr=cudaDeviceSynchronize();
-    if (cuerr != cudaSuccess)
-    {
-        printf("cudaDeviceSybc failed: %s\n",
-        cudaGetErrorString(cuerr));
-    } 
+    // cudaError_t cuerr=cudaDeviceSynchronize();
+    // if (cuerr != cudaSuccess)
+    // {
+    //     fprintf(stderr,"cudaDeviceSybc failed: %s\n",
+    //     cudaGetErrorString(cuerr));
+    // } 
 
     //free device data
     Arnoldi::device_deallocate_all_real(8, r_d, r_tilde_d, V_d, H_d, e1_d, vl_d, w_d, y_d);
  
 
     //free host data
-    Arnoldi::deallocate_real(5, H_h,cs_h,sn_h,e1_h,y_h);
+    Arnoldi::deallocate_real(5, H_h, cs_h, sn_h, e1_h, y_h);
     
     tol[0]=error;
 

@@ -52,13 +52,19 @@ typedef struct user_Ax_struture1{
 //declare user function that will be passed with structure
 void user_Ax_function(Ax_struct *SC, real * vec_f_in, real * vec_f_out);
 void user_Ax_function_1(Ax_struct_1 *SC, real * vec_f_in, real * vec_f_out);
+//preconditioner functions
+
+void user_Preconditioner_function(Ax_struct_1 *Prcond_struct, real *vec_f_in, real *vec_f_out);
+void user_Preconditioner_function_void(Ax_struct *Prcond_struct, real *vec_f_in, real *vec_f_out);
+
 //exponential estimate and inversion with shift
 void Axb_exponent_invert(Ax_struct_exponential *SC_exponential, real * vec_f_in, real * vec_f_out);
 
 
 int BiCGStabL(cublasHandle_t handle, int L, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *Iter, bool verbose, unsigned int skip=500);
 
-int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *basis_size, int restarts, bool verbose);
+int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, user_map_vector Precond, void *user_struct_precond, real *x, real* RHS, real *tol, int *basis_size, int restarts, bool verbose);
+
     
 
 #endif
