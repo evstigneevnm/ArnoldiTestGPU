@@ -37,6 +37,17 @@ void rotmat(const real a, const real b, real *c, real *s)
 
 }
 
+/*
+https://docs.nvidia.com/cuda/cublas/index.html#cublas-datatypes-reference
+
+cuBLAS scalar results storage:
+
+2.2.7. cublasPointerMode_t
+The cublasPointerMode_t type indicates whether the scalar values are passed by reference on the host or device. It is important to point out that if several scalar values are present in the function call, all of them must conform to the same single pointer mode. The pointer mode can be set and retrieved using cublasSetPointerMode() and cublasGetPointerMode() routines, respectively.
+Value                       |   Meaning
+CUBLAS_POINTER_MODE_HOST    |   the scalars are passed by reference on the host
+CUBLAS_POINTER_MODE_DEVICE  |   the scalars are passed by reference on the device
+*/
 
 int GMRES(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, user_map_vector Precond, void *user_struct_precond, real *x, real* RHS, real *tol, int *basis_size, int restarts, bool verbose) //, unsigned int skip, real machine_epsilon_provided, real *residual_history
 {
